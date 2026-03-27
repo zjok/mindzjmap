@@ -1,0 +1,9 @@
+{
+    "id": "mindzj",
+    "name": "MindZJ",
+    "version": "0.1.0",
+    "minAppVersion": "1.11.7",
+    "description": "An interactive mind map plugin for obsidian.",
+    "author": "SuperJohn",
+    "isDesktopOnly": true
+}
