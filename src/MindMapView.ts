@@ -398,9 +398,9 @@ export class MindMapView extends TextFileView {
         const btn = (txt: string, tip: string, fn: () => void) => {
             const b = tb.createEl("button", { title: tip });
             b.addClass("mz-tb-btn");
-            b.style.setProperty("--mz-btn-border", `1px ${btnBdrS} ${btnBdr}`);
-            b.style.setProperty("--mz-btn-bg", btnBg);
-            b.style.setProperty("--mz-btn-color", btnTx);
+            b.style.border = `1px ${btnBdrS} ${btnBdr}`;
+            b.style.background = btnBg;
+            b.style.color = btnTx;
             b.innerText = txt;
             b.addEventListener("click", fn);
             b.addEventListener("mouseenter", () =>
