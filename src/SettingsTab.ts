@@ -38,12 +38,10 @@ export class MindMapSettingTab extends PluginSettingTab {
         authEl.addClass("mz-about-meta-last");
         const descEl = about.createEl("p", { text: t("set.desc") });
         descEl.addClass("mz-about-desc");
-        const ghLink = about
-            .createEl("div")
-            .createEl("a", {
-                text: `📦 ${t("set.github")}`,
-                href: "https://github.com/zjok/mindzj",
-            });
+        const ghLink = about.createEl("div").createEl("a", {
+            text: `📦 ${t("set.github")}`,
+            href: "https://github.com/zjok/mindzj",
+        });
         ghLink.addClass("mz-about-link");
         ghLink.setAttr("target", "_blank");
 
@@ -239,9 +237,12 @@ export class MindMapSettingTab extends PluginSettingTab {
                 b.setButtonText(String(curVal) || "...");
                 b.onClick(() => {
                     b.setButtonText(t("set.key.press"));
-                    const handler = (e: KeyboardEvent) => {
-                        e.preventDefault();
-                        e.stopPropagation();
+                    let recording = true;
+                    let currentCombo = "";
+                    let hasMainKey = false;
+                    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+                    const buildCombo = (e: KeyboardEvent): string => {
                         const parts: string[] = [];
                         if (e.ctrlKey || e.metaKey) parts.push("ctrl");
                         if (e.shiftKey) parts.push("shift");
@@ -250,16 +251,65 @@ export class MindMapSettingTab extends PluginSettingTab {
                             !["Control", "Shift", "Alt", "Meta"].includes(e.key)
                         )
                             parts.push(e.key === " " ? "Space" : e.key);
-                        if (!parts.length) return;
-                        const combo = parts.join("+");
+                        return parts.join("+");
+                    };
+
+                    const finish = (combo: string) => {
+                        if (!recording) return;
+                        recording = false;
+                        if (timeout) clearTimeout(timeout);
+                        window.removeEventListener("keydown", onDown, true);
+                        window.removeEventListener("keyup", onUp, true);
                         kb[item.key] = combo;
                         b.setButtonText(combo);
                         void this.plugin.saveSettings();
                         this.plugin.refreshAllViews();
-                        window.removeEventListener("keydown", handler, true);
                         resetEl.toggleClass("mz-hidden", combo === defVal);
                     };
-                    window.addEventListener("keydown", handler, true);
+
+                    const cancel = () => {
+                        if (!recording) return;
+                        recording = false;
+                        if (timeout) clearTimeout(timeout);
+                        window.removeEventListener("keydown", onDown, true);
+                        window.removeEventListener("keyup", onUp, true);
+                        b.setButtonText(String(kb[item.key]) || "...");
+                    };
+
+                    const onDown = (e: KeyboardEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (e.key === "Escape") {
+                            cancel();
+                            return;
+                        }
+                        currentCombo = buildCombo(e);
+                        hasMainKey = ![
+                            "Control",
+                            "Shift",
+                            "Alt",
+                            "Meta",
+                        ].includes(e.key);
+                        b.setButtonText(
+                            currentCombo + (hasMainKey ? "" : "+…"),
+                        );
+                        // Reset timeout on each keydown
+                        if (timeout) clearTimeout(timeout);
+                        timeout = setTimeout(cancel, 5000);
+                    };
+
+                    const onUp = (e: KeyboardEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Finalize when a non-modifier key is released
+                        if (hasMainKey && currentCombo) {
+                            finish(currentCombo);
+                        }
+                    };
+
+                    window.addEventListener("keydown", onDown, true);
+                    window.addEventListener("keyup", onUp, true);
+                    timeout = setTimeout(cancel, 5000);
                 });
             });
         }

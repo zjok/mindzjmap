@@ -73,6 +73,7 @@ export interface MindMapStyle {
     textAlign: TextAlign;
     nodePadX: number;
     nodeLineHeight: number;
+    nodeGapY: number;
     canvasBg: string;
     toolbarPadTop: number;
     toolbarPadRight: number;
@@ -361,6 +362,7 @@ export const DEFAULT_STYLE: MindMapStyle = {
     textAlign: "center",
     nodePadX: 10,
     nodeLineHeight: 1.5,
+    nodeGapY: 24,
     canvasBg: "#ffffff",
     toolbarPadTop: 0,
     toolbarPadRight: 12,

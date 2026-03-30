@@ -265,6 +265,7 @@ export class MindMapView extends TextFileView {
         this.gEl.appendChild(this.overlayG);
         this.mdCt = ct.createEl("textarea") as HTMLTextAreaElement;
         this.mdCt.addClass("mz-md-ta");
+        this.mdCt.addClass("mz-hidden");
         this.bindEvts();
         window.addEventListener("keydown", this._kd, true);
         window.addEventListener("keyup", this._ku, true);
@@ -292,7 +293,10 @@ export class MindMapView extends TextFileView {
     }
 
     private applyCanvasBg() {
-        if (this.svgCt) this.svgCt.style.background = this.style.canvasBg;
+        if (this.svgCt)
+            Object.entries({ "--mz-canvas-bg": this.style.canvasBg }).forEach(
+                ([k, v]) => this.svgCt.style.setProperty(k, v),
+            );
     }
     private applyToolbarStyle() {
         const s = this.style;
@@ -391,20 +395,19 @@ export class MindMapView extends TextFileView {
         const btnBdr = s.toolbarBtnBorderColor;
         const btnBdrS = s.toolbarBtnBorderStyle;
         const btnTx = s.toolbarBtnTextColor;
-        const sepColor = s.toolbarBorderColor || btnBdr;
         const btn = (txt: string, tip: string, fn: () => void) => {
             const b = tb.createEl("button", { title: tip });
             b.addClass("mz-tb-btn");
-            b.style.cssText = `padding:4px 10px;border:1px ${btnBdrS} ${btnBdr};background:${btnBg};color:${btnTx};border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap;transition:background .15s;`;
+            b.style.setProperty("--mz-btn-border", `1px ${btnBdrS} ${btnBdr}`);
+            b.style.setProperty("--mz-btn-bg", btnBg);
+            b.style.setProperty("--mz-btn-color", btnTx);
             b.innerText = txt;
             b.addEventListener("click", fn);
-            b.addEventListener(
-                "mouseenter",
-                () => (b.style.background = "var(--background-modifier-hover)"),
+            b.addEventListener("mouseenter", () =>
+                b.addClass("mz-tb-btn-hover"),
             );
-            b.addEventListener(
-                "mouseleave",
-                () => (b.style.background = btnBg),
+            b.addEventListener("mouseleave", () =>
+                b.removeClass("mz-tb-btn-hover"),
             );
             return b;
         };
@@ -414,7 +417,7 @@ export class MindMapView extends TextFileView {
         const sep = () => {
             const d = tb.createEl("div");
             d.addClass("mz-tb-sep");
-            d.style.cssText = `width:1px;height:20px;background:${sepColor};margin:0 2px;`;
+            d.style.setProperty("--mz-sep-color", btnBdr);
         };
         sep();
         this.mdBtn = btn(t("tb.md"), t("tb.tipMd"), () => this.toggleMd());
@@ -606,6 +609,7 @@ export class MindMapView extends TextFileView {
         this.roots = JSON.parse(this.undoS.pop()!);
         if (this.selId && !this.fAll(this.selId)) this.selId = null;
         this.multiSel.clear();
+        this.recalcAllSizes();
         this.render();
         this.doSave();
     }
@@ -613,8 +617,20 @@ export class MindMapView extends TextFileView {
         if (!this.redoS.length) return;
         this.undoS.push(JSON.stringify(this.roots));
         this.roots = JSON.parse(this.redoS.pop()!);
+        this.recalcAllSizes();
         this.render();
         this.doSave();
+    }
+    /** Re-measure every node's width/height based on current style so that
+     *  text never gets clipped or force-wrapped after undo/redo. */
+    private recalcAllSizes() {
+        const walk = (n: MindNodeData) => {
+            const isR = !!n.isRoot;
+            n.width = this.calcW(n.text, isR);
+            n.height = this.calcH(n.text, isR);
+            for (const c of n.children) walk(c);
+        };
+        for (const r of this.roots) walk(r);
     }
     private fAll(id: string): MindNodeData | null {
         for (const r of this.roots) {
@@ -648,7 +664,32 @@ export class MindMapView extends TextFileView {
             this.buildTb(this.tbEl);
             this.applyToolbarStyle();
         }
+        // Recalculate all node sizes when font/layout related styles change
+        if (
+            p.nodeFontSize !== undefined ||
+            p.rootFontSize !== undefined ||
+            p.nodeFontFamily !== undefined ||
+            p.rootFontFamily !== undefined ||
+            p.nodeMinWidth !== undefined ||
+            p.nodeMinHeight !== undefined ||
+            p.rootMinWidth !== undefined ||
+            p.rootMinHeight !== undefined ||
+            p.nodePadX !== undefined ||
+            p.nodeLineHeight !== undefined
+        ) {
+            this.recalcAllNodeSizes();
+        }
         this.render();
+    }
+    private recalcAllNodeSizes() {
+        const visit = (n: MindNodeData) => {
+            const isR = !!n.isRoot;
+            n.width = this.calcW(n.text || " ", isR);
+            n.height = this.calcH(n.text || " ", isR);
+            for (const c of n.children) visit(c);
+        };
+        for (const r of this.roots) visit(r);
+        this.doSave();
     }
 
     private assignRainbowColor(parent: MindNodeData, child: MindNodeData) {
@@ -894,6 +935,7 @@ export class MindMapView extends TextFileView {
             ) => {
                 const it = listWrap.createEl("div");
                 it.addClass("mz-rainbow-item");
+                it.toggleClass("is-active", key === curPal);
                 it.addEventListener("mouseenter", () => {
                     if (key !== curPal) it.addClass("mz-rainbow-hover");
                 });
@@ -2031,7 +2073,7 @@ export class MindMapView extends TextFileView {
         this.cXY(n);
     }
     private cSH(n: MindNodeData): number {
-        const vm = 24;
+        const vm = this.style.nodeGapY ?? 24;
         if (!n.children?.length) {
             (n as LayoutNode)._sh = n.height + vm;
             return (n as LayoutNode)._sh;
@@ -2078,7 +2120,10 @@ export class MindMapView extends TextFileView {
         let mw = 0;
         for (const l of txt.split("\n")) {
             const d = document.createElement("span");
-            d.style.cssText = `visibility:hidden;position:absolute;white-space:pre;font-weight:bold;font-size:${fs}px;font-family:${ff};`;
+            d.addClass("mz-measure-span");
+            Object.entries({ "--mz-fs": fs + "px", "--mz-ff": ff }).forEach(
+                ([k, v]) => d.style.setProperty(k, v),
+            );
             d.innerText = l || " ";
             document.body.appendChild(d);
             if (d.offsetWidth > mw) mw = d.offsetWidth;
@@ -2297,8 +2342,17 @@ export class MindMapView extends TextFileView {
             const ch = nd.children[i];
             const col = this.getCC(ch, pR, i, inh);
             const isLeft = ch.side === "left";
-            const sx = isLeft ? nd.x - nd.width / 2 : nd.x + nd.width / 2;
-            const ex = isLeft ? ch.x + ch.width / 2 : ch.x - ch.width / 2;
+            // Account for border width so connections reach outer edge
+            const pVis = this.nodeVis(nd);
+            const pBW = pVis.bS !== "none" ? pVis.bW : 0;
+            const cVis = this.nodeVis(ch);
+            const cBW = cVis.bS !== "none" ? cVis.bW : 0;
+            const sx = isLeft
+                ? nd.x - nd.width / 2 - pBW
+                : nd.x + nd.width / 2 + pBW;
+            const ex = isLeft
+                ? ch.x + ch.width / 2 + cBW
+                : ch.x - ch.width / 2 - cBW;
             const p = document.createElementNS(
                 "http://www.w3.org/2000/svg",
                 "path",
@@ -2335,11 +2389,15 @@ export class MindMapView extends TextFileView {
             "foreignObject",
         );
         fo.id = "mn-" + nd.id;
+        const v = this.nodeVis(nd);
+        const bW = v.bS !== "none" ? v.bW : 0;
+        const visualW = nd.width + bW * 2;
+        const visualH = nd.height + bW * 2;
         const selEx = this.isSel(nd.id) ? this.style.selectionWidth + 4 : 0;
-        fo.setAttribute("x", String(nd.x - nd.width / 2 - selEx));
-        fo.setAttribute("y", String(nd.y - nd.height / 2 - selEx));
-        fo.setAttribute("width", String(nd.width + selEx * 2));
-        fo.setAttribute("height", String(nd.height + selEx * 2));
+        fo.setAttribute("x", String(nd.x - visualW / 2 - selEx));
+        fo.setAttribute("y", String(nd.y - visualH / 2 - selEx));
+        fo.setAttribute("width", String(visualW + selEx * 2));
+        fo.setAttribute("height", String(visualH + selEx * 2));
         fo.setAttribute("overflow", "visible");
         // overflow:visible set via SVG attribute above
         if (
@@ -2400,6 +2458,9 @@ export class MindMapView extends TextFileView {
         const padX = this.style.nodePadX;
         const lh = this.style.nodeLineHeight;
         const off = this.style.selectionOutlineOffset;
+        const bW = v.bS !== "none" ? v.bW : 0;
+        const visualW = nd.width + bW * 2;
+        const visualH = nd.height + bW * 2;
         const borderCSS =
             v.bS !== "none"
                 ? `border:${v.bW}px ${v.bS} ${v.bC};`
@@ -2408,7 +2469,38 @@ export class MindMapView extends TextFileView {
             ? `outline:${this.style.selectionWidth}px solid ${this.style.selectionColor};outline-offset:${off}px;`
             : "";
         div.addClass("mz-node-div");
-        div.style.cssText = `width:${nd.width}px;height:${nd.height}px;display:flex;align-items:center;justify-content:${ta === "left" ? "flex-start" : ta === "right" ? "flex-end" : "center"};border-radius:${v.rad}px;font-weight:${v.isR ? 700 : 500};user-select:none;box-sizing:border-box;font-size:${v.fs}px;font-family:${v.ff};overflow:visible;white-space:pre-wrap;word-break:break-word;text-align:${ta};line-height:${lh};background:${v.bg};color:${v.tc};padding:6px ${padX}px;cursor:${v.isR ? "move" : "grab"};${borderCSS}${selCSS}`;
+        const ds = div.style;
+        ds.setProperty("--mz-w", visualW + "px");
+        ds.setProperty("--mz-h", visualH + "px");
+        ds.setProperty(
+            "--mz-jc",
+            ta === "left"
+                ? "flex-start"
+                : ta === "right"
+                  ? "flex-end"
+                  : "center",
+        );
+        ds.setProperty("--mz-rad", v.rad + "px");
+        ds.setProperty("--mz-fw", String(v.isR ? 700 : 500));
+        ds.setProperty("--mz-fs", v.fs + "px");
+        ds.setProperty("--mz-ff", v.ff);
+        ds.setProperty("--mz-ta", ta);
+        ds.setProperty("--mz-lh", String(lh));
+        ds.setProperty("--mz-bg", v.bg);
+        ds.setProperty("--mz-tc", v.tc);
+        ds.setProperty("--mz-pad", `6px ${padX}px`);
+        ds.setProperty("--mz-cursor", v.isR ? "move" : "grab");
+        ds.setProperty(
+            "--mz-border",
+            v.bS !== "none" ? `${v.bW}px ${v.bS} ${v.bC}` : "none",
+        );
+        ds.setProperty(
+            "--mz-outline",
+            sel
+                ? `${this.style.selectionWidth}px solid ${this.style.selectionColor}`
+                : "none",
+        );
+        ds.setProperty("--mz-outline-off", sel ? off + "px" : "0");
         div.innerText = nd.text;
         div.addEventListener("mousedown", (e) => {
             if (this.spaceDown) return;
@@ -2484,6 +2576,9 @@ export class MindMapView extends TextFileView {
         const padX = this.style.nodePadX;
         const lh = this.style.nodeLineHeight;
         const off = this.style.selectionOutlineOffset;
+        const bW = v.bS !== "none" ? v.bW : 0;
+        const visualW = nd.width + bW * 2;
+        const visualH = nd.height + bW * 2;
         const borderCSS =
             v.bS !== "none"
                 ? `border:${v.bW}px ${v.bS} ${v.bC};`
@@ -2491,11 +2586,25 @@ export class MindMapView extends TextFileView {
         const editOW = this.style.editOutlineWidth;
         const editCSS = `outline:${editOW}px solid ${editOC};outline-offset:${off}px;transition:none;animation:none;`;
         ta.addClass("mz-node-ta");
-        ta.style.cssText = `width:${nd.width}px;height:${nd.height}px;display:block;border-radius:${v.rad}px;font-weight:${v.isR ? 700 : 500};box-sizing:border-box;font-size:${v.fs}px;font-family:${v.ff};white-space:pre-wrap;word-break:break-word;text-align:${tAlign};line-height:${lh};background:${v.bg};color:${v.tc};padding:6px ${padX}px;margin:0;resize:none;overflow:hidden;cursor:text;${borderCSS}${editCSS}`;
-        // CSS variables only for pseudo-class styles (::selection, :focus)
         const ts = ta.style;
+        ts.setProperty("--mz-w", visualW + "px");
+        ts.setProperty("--mz-h", visualH + "px");
+        ts.setProperty("--mz-rad", v.rad + "px");
+        ts.setProperty("--mz-fw", String(v.isR ? 700 : 500));
+        ts.setProperty("--mz-fs", v.fs + "px");
+        ts.setProperty("--mz-ff", v.ff);
+        ts.setProperty("--mz-ta", tAlign);
+        ts.setProperty("--mz-lh", String(lh));
+        ts.setProperty("--mz-bg", v.bg);
+        ts.setProperty("--mz-tc", v.tc);
+        ts.setProperty("--mz-pad", `6px ${padX}px`);
+        ts.setProperty(
+            "--mz-border",
+            v.bS !== "none" ? `${v.bW}px ${v.bS} ${v.bC}` : "none",
+        );
         ts.setProperty("--mz-edit-outline", `${editOW}px solid ${editOC}`);
         ts.setProperty("--mz-edit-outline-off", off + "px");
+        ta.addClass("mz-node-ta");
         ts.setProperty("--mz-sel-bg", editOC + "40");
         ta.addEventListener("mousedown", (e) => e.stopPropagation());
         // FIX: input handler — recalc size both grow AND shrink
@@ -2506,8 +2615,8 @@ export class MindMapView extends TextFileView {
             if (nw !== nd.width || nh !== nd.height) {
                 nd.width = nw;
                 nd.height = nh;
-                ta.style.width = nd.width + "px";
-                ta.style.height = nd.height + "px";
+                ta.style.setProperty("--mz-w", nd.width + bW * 2 + "px");
+                ta.style.setProperty("--mz-h", nd.height + bW * 2 + "px");
                 this.softRender();
             }
         });
@@ -2580,12 +2689,16 @@ export class MindMapView extends TextFileView {
         const v = (n: MindNodeData) => {
             const sel = this.isSel(n.id);
             const ex = sel ? this.style.selectionWidth + 4 : 0;
+            const nv = this.nodeVis(n);
+            const bW = nv.bS !== "none" ? nv.bW : 0;
+            const vw = n.width + bW * 2;
+            const vh = n.height + bW * 2;
             const fo = document.getElementById("mn-" + n.id);
             if (fo) {
-                fo.setAttribute("x", String(n.x - n.width / 2 - ex));
-                fo.setAttribute("y", String(n.y - n.height / 2 - ex));
-                fo.setAttribute("width", String(n.width + ex * 2));
-                fo.setAttribute("height", String(n.height + ex * 2));
+                fo.setAttribute("x", String(n.x - vw / 2 - ex));
+                fo.setAttribute("y", String(n.y - vh / 2 - ex));
+                fo.setAttribute("width", String(vw + ex * 2));
+                fo.setAttribute("height", String(vh + ex * 2));
             }
             for (const c of n.children) v(c);
         };
@@ -2727,7 +2840,7 @@ export class MindMapView extends TextFileView {
                     // .setIcon("plus")
                     .onClick(() => {
                         this.sel1(nd.id);
-                        this.addChildNode();
+                        this.addChildNode(nd.isRoot ? "right" : undefined);
                     }),
             );
             if (nd.isRoot)

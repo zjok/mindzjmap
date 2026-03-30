@@ -209,6 +209,7 @@ export class StylePanelView extends ItemView {
         mkRange(s3, t("sm.width"), "connectionWidth", 1, 8);
         mkNum(s3, t("sm.connLength"), "connectionLength", 30, 300);
         mkSel(s3, t("sm.nodeDir"), "nodeDirection", ["right", "left", "both"]);
+        mkNum(s3, t("sm.nodeGapY") || "Sibling Gap", "nodeGapY", 8, 80);
 
         // Rainbow
         const ctRow = s3.createEl("div");
