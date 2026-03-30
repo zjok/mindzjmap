@@ -20,7 +20,7 @@
     "rootBorderRadius": 5,
     "rootMinWidth": 96,
     "rootMinHeight": 40,
-    "connectionStyle": "bezier",
+    "connectionStyle": "bracket",
     "connectionColor": "#a8a8a8",
     "connectionWidth": 1.5,
     "connectionLength": 96,
@@ -61,7 +61,7 @@
     "toolbarBorderColor": "#e0e0e0",
     "toolbarBorderWidth": 1
   },
-  "language": "zh",
+  "language": "es",
   "theme": "light",
   "showToolbar": true,
   "keyBindings": {

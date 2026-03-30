@@ -914,7 +914,7 @@ export class MindMapView extends TextFileView {
         ctRow.addClass("mz-rainbow-ct");
         ctRow
             .createEl("label", {
-                text: "🌈 " + t("sm.rainbow"),
+                text: t("sm.rainbow"),
             })
             .addClass("mz-rainbow-lbl");
         const allPals: { [k: string]: string[] } = {
@@ -1373,7 +1373,7 @@ export class MindMapView extends TextFileView {
             ctDiv.addClass("mz-rainbow-ct");
             ctDiv
                 .createEl("span", {
-                    text: "🌈 " + t("sm.rainbow"),
+                    text: t("sm.rainbow"),
                 })
                 .addClass("mz-rainbow-lbl");
             const nPals: { [k: string]: string[] } = {
