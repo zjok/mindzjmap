@@ -905,6 +905,10 @@ export class MindMapView extends TextFileView {
         R(s3, t("sm.nodeDir"), "nodeDirection", "select", {
             options: ["right", "left", "both"],
         });
+        R(s3, t("sm.nodeGapY"), "nodeGapY", "number", {
+            min: 8,
+            max: 80,
+        });
         // Rainbow: list with real color dots, delete buttons, no modal reopen
         const ctRow = s3.createEl("div");
         ctRow.addClass("mz-rainbow-ct");
