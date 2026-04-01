@@ -22,7 +22,7 @@ __export(main_exports, {
   default: () => MindNodePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/MindMapView.ts
 var import_obsidian = require("obsidian");
@@ -290,6 +290,7 @@ var DEFAULT_SETTINGS = {
 };
 var VIEW_TYPE_MINDMAP = "mindzj-view";
 var VIEW_TYPE_MINDMAP_STYLE = "mindzj-style-panel";
+var VIEW_TYPE_MINDMAP_OUTLINE = "mindzj-outline";
 var MINDMAP_FILE_EXTENSION = "mindzj";
 
 // src/i18n.ts
@@ -384,6 +385,8 @@ var _en = {
   "sm.editOutline": "Edit Outline Color",
   "sm.editOutlineWidth": "Edit Outline Width",
   "sm.boxSelColor": "Box Selection Color",
+  "outline.title": "Outline",
+  "outline.empty": "No mind map open",
   "sm.textAlign": "Text Align",
   "sm.nodePadX": "Text Padding",
   "sm.nodeLineHeight": "Line Height",
@@ -533,6 +536,8 @@ var _zh = {
   "sm.editOutline": "\u7F16\u8F91\u6846\u989C\u8272",
   "sm.editOutlineWidth": "\u7F16\u8F91\u6846\u5BBD\u5EA6",
   "sm.boxSelColor": "\u6846\u9009\u989C\u8272",
+  "outline.title": "\u5927\u7EB2",
+  "outline.empty": "\u6CA1\u6709\u6253\u5F00\u7684\u601D\u7EF4\u5BFC\u56FE",
   "sm.textAlign": "\u6587\u5B57\u5BF9\u9F50",
   "sm.nodePadX": "\u6587\u5B57\u95F4\u8DDD",
   "sm.nodeLineHeight": "\u884C\u95F4\u8DDD",
@@ -682,6 +687,8 @@ var _ja = {
   "sm.editOutline": "\u7DE8\u96C6\u67A0\u306E\u8272",
   "sm.editOutlineWidth": "\u7DE8\u96C6\u67A0\u306E\u5E45",
   "sm.boxSelColor": "\u7BC4\u56F2\u9078\u629E\u8272",
+  "outline.title": "\u30A2\u30A6\u30C8\u30E9\u30A4\u30F3",
+  "outline.empty": "\u30DE\u30A4\u30F3\u30C9\u30DE\u30C3\u30D7\u304C\u958B\u304B\u308C\u3066\u3044\u307E\u305B\u3093",
   "sm.textAlign": "\u30C6\u30AD\u30B9\u30C8\u914D\u7F6E",
   "sm.nodePadX": "\u30C6\u30AD\u30B9\u30C8\u4F59\u767D",
   "sm.nodeLineHeight": "\u884C\u306E\u9AD8\u3055",
@@ -831,6 +838,8 @@ var _fr = {
   "sm.editOutline": "Couleur contour \xE9dition",
   "sm.editOutlineWidth": "Largeur contour \xE9dition",
   "sm.boxSelColor": "Couleur de s\xE9lection",
+  "outline.title": "Plan",
+  "outline.empty": "Aucune carte ouverte",
   "sm.textAlign": "Alignement texte",
   "sm.nodePadX": "Marge texte",
   "sm.nodeLineHeight": "Hauteur de ligne",
@@ -980,6 +989,8 @@ var _de = {
   "sm.editOutline": "Bearbeitungsrahmenfarbe",
   "sm.editOutlineWidth": "Bearbeitungsrahmenbreite",
   "sm.boxSelColor": "Auswahlfarbe",
+  "outline.title": "Gliederung",
+  "outline.empty": "Keine Mindmap ge\xF6ffnet",
   "sm.textAlign": "Textausrichtung",
   "sm.nodePadX": "Textabstand",
   "sm.nodeLineHeight": "Zeilenh\xF6he",
@@ -1129,6 +1140,8 @@ var _es = {
   "sm.editOutline": "Color contorno edici\xF3n",
   "sm.editOutlineWidth": "Ancho contorno edici\xF3n",
   "sm.boxSelColor": "Color de selecci\xF3n",
+  "outline.title": "Esquema",
+  "outline.empty": "No hay mapa abierto",
   "sm.textAlign": "Alineaci\xF3n",
   "sm.nodePadX": "Relleno texto",
   "sm.nodeLineHeight": "Altura l\xEDnea",
@@ -1278,6 +1291,8 @@ var _ru = {
   "sm.editOutline": "\u0426\u0432\u0435\u0442 \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0440\u0435\u0434.",
   "sm.editOutlineWidth": "\u0428\u0438\u0440\u0438\u043D\u0430 \u043A\u043E\u043D\u0442\u0443\u0440\u0430 \u0440\u0435\u0434.",
   "sm.boxSelColor": "\u0426\u0432\u0435\u0442 \u0440\u0430\u043C\u043A\u0438 \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u0438\u044F",
+  "outline.title": "\u0421\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430",
+  "outline.empty": "\u041D\u0435\u0442 \u043E\u0442\u043A\u0440\u044B\u0442\u043E\u0439 \u043A\u0430\u0440\u0442\u044B",
   "sm.textAlign": "\u0412\u044B\u0440\u0430\u0432\u043D\u0438\u0432\u0430\u043D\u0438\u0435",
   "sm.nodePadX": "\u041E\u0442\u0441\u0442\u0443\u043F \u0442\u0435\u043A\u0441\u0442\u0430",
   "sm.nodeLineHeight": "\u0412\u044B\u0441\u043E\u0442\u0430 \u0441\u0442\u0440\u043E\u043A\u0438",
@@ -1427,6 +1442,8 @@ var _sv = {
   "sm.editOutline": "Redigeringskonturf\xE4rg",
   "sm.editOutlineWidth": "Redigeringskonturbredd",
   "sm.boxSelColor": "Markerings f\xE4rg",
+  "outline.title": "Disposition",
+  "outline.empty": "Ingen karta \xF6ppen",
   "sm.textAlign": "Textjustering",
   "sm.nodePadX": "Textavst\xE5nd",
   "sm.nodeLineHeight": "Radh\xF6jd",
@@ -1576,6 +1593,8 @@ var _hi = {
   "sm.editOutline": "\u0938\u0902\u092A\u093E\u0926\u0928 \u0906\u0909\u091F\u0932\u093E\u0907\u0928 \u0930\u0902\u0917",
   "sm.editOutlineWidth": "\u0938\u0902\u092A\u093E\u0926\u0928 \u0906\u0909\u091F\u0932\u093E\u0907\u0928 \u091A\u094C\u0921\u093C\u093E\u0908",
   "sm.boxSelColor": "\u092C\u0949\u0915\u094D\u0938 \u091A\u092F\u0928 \u0930\u0902\u0917",
+  "outline.title": "\u0930\u0942\u092A\u0930\u0947\u0916\u093E",
+  "outline.empty": "\u0915\u094B\u0908 \u092E\u093E\u0907\u0902\u0921 \u092E\u0948\u092A \u0928\u0939\u0940\u0902",
   "sm.textAlign": "\u091F\u0947\u0915\u094D\u0938\u094D\u091F \u0938\u0902\u0930\u0947\u0916\u0923",
   "sm.nodePadX": "\u091F\u0947\u0915\u094D\u0938\u094D\u091F \u092A\u0948\u0921\u093F\u0902\u0917",
   "sm.nodeLineHeight": "\u092A\u0902\u0915\u094D\u0924\u093F \u090A\u0902\u091A\u093E\u0908",
@@ -1725,6 +1744,8 @@ var _ko = {
   "sm.editOutline": "\uD3B8\uC9D1 \uC724\uACFD\uC120 \uC0C9\uC0C1",
   "sm.editOutlineWidth": "\uD3B8\uC9D1 \uC724\uACFD\uC120 \uB108\uBE44",
   "sm.boxSelColor": "\uBC15\uC2A4 \uC120\uD0DD \uC0C9\uC0C1",
+  "outline.title": "\uAC1C\uC694",
+  "outline.empty": "\uC5F4\uB9B0 \uB9C8\uC778\uB4DC\uB9F5 \uC5C6\uC74C",
   "sm.textAlign": "\uD14D\uC2A4\uD2B8 \uC815\uB82C",
   "sm.nodePadX": "\uD14D\uC2A4\uD2B8 \uD328\uB529",
   "sm.nodeLineHeight": "\uC904 \uB192\uC774",
@@ -1874,6 +1895,8 @@ var _pt = {
   "sm.editOutline": "Cor contorno edi\xE7\xE3o",
   "sm.editOutlineWidth": "Largura contorno edi\xE7\xE3o",
   "sm.boxSelColor": "Cor de sele\xE7\xE3o",
+  "outline.title": "Esbo\xE7o",
+  "outline.empty": "Nenhum mapa aberto",
   "sm.textAlign": "Alinhamento",
   "sm.nodePadX": "Preenchimento texto",
   "sm.nodeLineHeight": "Altura da linha",
@@ -2023,6 +2046,8 @@ var _fi = {
   "sm.editOutline": "Muokkauksen \xE4\xE4riviivan v\xE4ri",
   "sm.editOutlineWidth": "Muokkauksen \xE4\xE4riviivan leveys",
   "sm.boxSelColor": "Valinnan v\xE4ri",
+  "outline.title": "J\xE4sennys",
+  "outline.empty": "Ei avointa karttaa",
   "sm.textAlign": "Tekstin tasaus",
   "sm.nodePadX": "Tekstin t\xE4yte",
   "sm.nodeLineHeight": "Rivin korkeus",
@@ -2172,6 +2197,8 @@ var _no = {
   "sm.editOutline": "Redigeringskontur",
   "sm.editOutlineWidth": "Redigeringskonturbredde",
   "sm.boxSelColor": "Utvalgsfarge",
+  "outline.title": "Disposisjon",
+  "outline.empty": "Ingen kart \xE5pent",
   "sm.textAlign": "Tekstjustering",
   "sm.nodePadX": "Tekstutfylling",
   "sm.nodeLineHeight": "Linjeh\xF8yde",
@@ -2321,6 +2348,8 @@ var _nl = {
   "sm.editOutline": "Bewerkingsomtrekkleur",
   "sm.editOutlineWidth": "Bewerkingsomtrekbreedte",
   "sm.boxSelColor": "Selectiekleur",
+  "outline.title": "Overzicht",
+  "outline.empty": "Geen mindmap open",
   "sm.textAlign": "Tekstuitlijning",
   "sm.nodePadX": "Tekstvulling",
   "sm.nodeLineHeight": "Regelhoogte",
@@ -2470,6 +2499,8 @@ var _li = {
   "sm.editOutline": "Bearbeitigsrahmefarb",
   "sm.editOutlineWidth": "Bearbeitigsrahmebreiti",
   "sm.boxSelColor": "Auswahlfarbe",
+  "outline.title": "Gliederung",
+  "outline.empty": "Keine Mindmap offen",
   "sm.textAlign": "Textusrichtig",
   "sm.nodePadX": "Textabstand",
   "sm.nodeLineHeight": "Zileh\xF6chi",
@@ -2619,6 +2650,8 @@ var _da = {
   "sm.editOutline": "Redigeringskonturfarve",
   "sm.editOutlineWidth": "Redigeringskonturbredde",
   "sm.boxSelColor": "Valgfarve",
+  "outline.title": "Oversigt",
+  "outline.empty": "Ingen kort \xE5bent",
   "sm.textAlign": "Tekstjustering",
   "sm.nodePadX": "Tekstudfyldning",
   "sm.nodeLineHeight": "Linjeh\xF8jde",
@@ -2768,6 +2801,8 @@ var _he = {
   "sm.editOutline": "\u05E6\u05D1\u05E2 \u05DE\u05EA\u05D0\u05E8 \u05E2\u05E8\u05D9\u05DB\u05D4",
   "sm.editOutlineWidth": "\u05E2\u05D5\u05D1\u05D9 \u05DE\u05EA\u05D0\u05E8 \u05E2\u05E8\u05D9\u05DB\u05D4",
   "sm.boxSelColor": "\u05E6\u05D1\u05E2 \u05D1\u05D7\u05D9\u05E8\u05D4",
+  "outline.title": "\u05DE\u05EA\u05D0\u05E8",
+  "outline.empty": "\u05D0\u05D9\u05DF \u05DE\u05E4\u05D4 \u05E4\u05EA\u05D5\u05D7\u05D4",
   "sm.textAlign": "\u05D9\u05D9\u05E9\u05D5\u05E8 \u05D8\u05E7\u05E1\u05D8",
   "sm.nodePadX": "\u05E8\u05D9\u05E4\u05D5\u05D3 \u05D8\u05E7\u05E1\u05D8",
   "sm.nodeLineHeight": "\u05D2\u05D5\u05D1\u05D4 \u05E9\u05D5\u05E8\u05D4",
@@ -2917,6 +2952,8 @@ var _it = {
   "sm.editOutline": "Colore contorno modifica",
   "sm.editOutlineWidth": "Larghezza contorno modifica",
   "sm.boxSelColor": "Colore selezione",
+  "outline.title": "Schema",
+  "outline.empty": "Nessuna mappa aperta",
   "sm.textAlign": "Allineamento testo",
   "sm.nodePadX": "Riempimento testo",
   "sm.nodeLineHeight": "Altezza riga",
@@ -3066,6 +3103,8 @@ var _ar = {
   "sm.editOutline": "\u0644\u0648\u0646 \u0625\u0637\u0627\u0631 \u0627\u0644\u062A\u062D\u0631\u064A\u0631",
   "sm.editOutlineWidth": "\u0639\u0631\u0636 \u0625\u0637\u0627\u0631 \u0627\u0644\u062A\u062D\u0631\u064A\u0631",
   "sm.boxSelColor": "\u0644\u0648\u0646 \u0627\u0644\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0645\u0631\u0628\u0639",
+  "outline.title": "\u0627\u0644\u0645\u062E\u0637\u0637",
+  "outline.empty": "\u0644\u0627 \u062A\u0648\u062C\u062F \u062E\u0631\u064A\u0637\u0629 \u0645\u0641\u062A\u0648\u062D\u0629",
   "sm.textAlign": "\u0645\u062D\u0627\u0630\u0627\u0629 \u0627\u0644\u0646\u0635",
   "sm.nodePadX": "\u062D\u0634\u0648 \u0627\u0644\u0646\u0635",
   "sm.nodeLineHeight": "\u0627\u0631\u062A\u0641\u0627\u0639 \u0627\u0644\u0633\u0637\u0631",
@@ -3220,6 +3259,7 @@ var MindMapView = class extends import_obsidian.TextFileView {
     this.mdSnapshot = null;
     this.zoomLabel = null;
     this.proxyTA = null;
+    this.mdOutlineTimer = null;
     this._kd = (e) => {
       var _a;
       if (!this.isAct() || this.mdMode || this.isExtInput(e))
@@ -3535,6 +3575,14 @@ var MindMapView = class extends import_obsidian.TextFileView {
       return `rgba(59,130,246,${alpha})`;
     return `rgba(${r},${g},${b},${alpha})`;
   }
+  /** Notify the custom outline panel to re-read the node tree. */
+  updateOutlineHeadings() {
+    this.plugin.refreshOutline();
+  }
+  /** Refresh outline when the view is closing (will show empty). */
+  clearOutlineHeadings() {
+    setTimeout(() => this.plugin.refreshOutline(), 50);
+  }
   mkRoot(txt) {
     return {
       id: crypto.randomUUID(),
@@ -3581,6 +3629,7 @@ var MindMapView = class extends import_obsidian.TextFileView {
     }
     if (this.roots.length && !this.selId)
       this.selId = this.roots[0].id;
+    this.updateOutlineHeadings();
     if (this.uiOk) {
       if (this.mdMode)
         this.renderMd();
@@ -3596,6 +3645,7 @@ var MindMapView = class extends import_obsidian.TextFileView {
   }
   doSave() {
     this.requestSave();
+    this.updateOutlineHeadings();
   }
   fitAll() {
     if (!this.cc || !this.roots.length)
@@ -3650,6 +3700,21 @@ var MindMapView = class extends import_obsidian.TextFileView {
     this.updateDevPanel();
     this.render();
   }
+  /** Expose the current root nodes for the outline panel. */
+  getRoots() {
+    return this.roots;
+  }
+  /** Select a node by id and pan the canvas to center it. */
+  selectAndFocusNode(id) {
+    const nd = this.fAll(id);
+    if (!nd)
+      return;
+    if (this.commitEdit)
+      this.commitEdit();
+    this.sel1(id);
+    this.focusNode(nd);
+    this.render();
+  }
   // eslint-disable-next-line @typescript-eslint/require-await
   async onOpen() {
     const ct = this.containerEl.children[1];
@@ -3695,6 +3760,16 @@ var MindMapView = class extends import_obsidian.TextFileView {
     this.mdCt = ct.createEl("textarea");
     this.mdCt.addClass("mz-md-ta");
     this.mdCt.addClass("mz-hidden");
+    this.mdCt.addEventListener("input", () => {
+      if (!this.mdMode)
+        return;
+      if (this.mdOutlineTimer)
+        clearTimeout(this.mdOutlineTimer);
+      this.mdOutlineTimer = setTimeout(
+        () => this.updateOutlineHeadings(),
+        300
+      );
+    });
     this.bindEvts();
     window.addEventListener("keydown", this._kd, true);
     window.addEventListener("keyup", this._ku, true);
@@ -3714,6 +3789,9 @@ var MindMapView = class extends import_obsidian.TextFileView {
     if (this.commitEdit)
       this.commitEdit();
     this.clearProxy();
+    if (this.mdOutlineTimer)
+      clearTimeout(this.mdOutlineTimer);
+    this.clearOutlineHeadings();
     this.uiOk = false;
     this.spaceDown = false;
     this.dragCv = false;
@@ -3862,6 +3940,11 @@ var MindMapView = class extends import_obsidian.TextFileView {
       () => this.toggleSearch()
     );
     btn(
+      "\u{1F4D1} " + t("outline.title"),
+      t("outline.title"),
+      () => this.plugin.openOutlinePanel()
+    );
+    btn(
       t("tb.settings"),
       t("tb.tipSettings"),
       () => this.plugin.openPluginSettings()
@@ -3916,6 +3999,7 @@ var MindMapView = class extends import_obsidian.TextFileView {
       this.svgCt.toggleClass("mz-hidden", true);
       this.mdCt.toggleClass("mz-hidden", false);
       this.mdCt.value = this.roots2md();
+      this.updateOutlineHeadings();
     }
   }
   roots2mdFromSnap() {
@@ -6727,9 +6811,129 @@ var StylePanelView = class extends import_obsidian2.ItemView {
   }
 };
 
-// src/SettingsTab.ts
+// src/MindMapOutlineView.ts
 var import_obsidian3 = require("obsidian");
-var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
+var MindMapOutlineView = class extends import_obsidian3.ItemView {
+  constructor(leaf, plugin) {
+    super(leaf);
+    this.treeEl = null;
+    this.plugin = plugin;
+  }
+  getViewType() {
+    return VIEW_TYPE_MINDMAP_OUTLINE;
+  }
+  getDisplayText() {
+    return "MindZJ " + t("outline.title");
+  }
+  getIcon() {
+    return "list-tree";
+  }
+  async onOpen() {
+    const ct = this.containerEl.children[1];
+    ct.empty();
+    ct.addClass("mz-outline-ct");
+    this.treeEl = ct.createEl("div");
+    this.treeEl.addClass("mz-outline-tree");
+    this.refresh();
+  }
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async onClose() {
+    this.treeEl = null;
+  }
+  /** Get the currently active MindMapView (if any). */
+  getActiveMapView() {
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP);
+    const active = this.app.workspace.activeLeaf;
+    if (active && active.view instanceof MindMapView)
+      return active.view;
+    for (const l of leaves) {
+      if (l.view instanceof MindMapView)
+        return l.view;
+    }
+    return null;
+  }
+  /** Rebuild the outline tree from the active mind map. */
+  refresh() {
+    if (!this.treeEl)
+      return;
+    this.treeEl.empty();
+    const view = this.getActiveMapView();
+    if (!view) {
+      const empty = this.treeEl.createEl("div", {
+        text: t("outline.empty")
+      });
+      empty.addClass("mz-outline-empty");
+      return;
+    }
+    const roots = view.getRoots();
+    if (!roots.length) {
+      const empty = this.treeEl.createEl("div", {
+        text: t("outline.empty")
+      });
+      empty.addClass("mz-outline-empty");
+      return;
+    }
+    for (const root of roots) {
+      this.buildNode(this.treeEl, root, 0, view);
+    }
+  }
+  /** Recursively build a tree node element. */
+  buildNode(parent, nd, depth, view) {
+    const item = parent.createEl("div");
+    item.addClass("mz-outline-item");
+    const row = item.createEl("div");
+    row.addClass("mz-outline-row");
+    row.style.paddingLeft = depth * 16 + 8 + "px";
+    const hasChildren = nd.children && nd.children.length > 0;
+    const toggle = row.createEl("span");
+    toggle.addClass("mz-outline-toggle");
+    if (hasChildren) {
+      toggle.innerText = "\u25BC";
+      toggle.addClass("mz-outline-toggle-active");
+    } else {
+      toggle.innerText = " ";
+    }
+    const level = depth === 0 ? 1 : Math.min(depth + 1, 6);
+    const badge = row.createEl("span", { text: "H" + level });
+    badge.addClass("mz-outline-badge");
+    badge.addClass("mz-outline-h" + level);
+    const text = row.createEl("span", {
+      text: nd.text.replace(/\n/g, " ")
+    });
+    text.addClass("mz-outline-text");
+    if (depth === 0)
+      text.addClass("mz-outline-text-root");
+    if (nd.side === "left") {
+      const side = row.createEl("span", { text: "L" });
+      side.addClass("mz-outline-side");
+    }
+    row.addEventListener("click", (e) => {
+      e.stopPropagation();
+      view.selectAndFocusNode(nd.id);
+    });
+    if (hasChildren) {
+      const childCt = item.createEl("div");
+      childCt.addClass("mz-outline-children");
+      const rightCh = nd.children.filter((c) => c.side !== "left");
+      const leftCh = nd.children.filter((c) => c.side === "left");
+      for (const c of rightCh)
+        this.buildNode(childCt, c, depth + 1, view);
+      for (const c of leftCh)
+        this.buildNode(childCt, c, depth + 1, view);
+      let collapsed = false;
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        toggle.innerText = collapsed ? "\u25B6" : "\u25BC";
+        childCt.toggleClass("mz-outline-collapsed", collapsed);
+      });
+    }
+  }
+};
+
+// src/SettingsTab.ts
+var import_obsidian4 = require("obsidian");
+var MindMapSettingTab = class extends import_obsidian4.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -6785,8 +6989,8 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
     );
     mkDon("\u2764\uFE0F Ko-fi", "#FF5E5B", "https://ko-fi.com/superjohn");
     mkDon("\u{1F4B0} PayPal", "#0070ba", "https://paypal.me/TanCat997");
-    new import_obsidian3.Setting(containerEl).setName(t("set.title")).setHeading();
-    new import_obsidian3.Setting(containerEl).setName(t("set.lang")).setDesc(t("set.langDesc")).addDropdown((dd) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.title")).setHeading();
+    new import_obsidian4.Setting(containerEl).setName(t("set.lang")).setDesc(t("set.langDesc")).addDropdown((dd) => {
       for (const l of LANGUAGES)
         dd.addOption(l.value, l.label);
       dd.setValue(this.plugin.settings.language);
@@ -6798,7 +7002,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
         this.display();
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.theme")).setDesc(t("set.themeDesc")).addDropdown((dd) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.theme")).setDesc(t("set.themeDesc")).addDropdown((dd) => {
       dd.addOption("light", t("set.light"));
       dd.addOption("dark", t("set.dark"));
       dd.setValue(this.plugin.settings.theme);
@@ -6807,7 +7011,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
         this.display();
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.canvasBg")).setDesc(t("set.canvasBgDesc")).addColorPicker((cp) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.canvasBg")).setDesc(t("set.canvasBgDesc")).addColorPicker((cp) => {
       const cur = this.plugin.settings.style.canvasBg;
       cp.setValue(cur.startsWith("#") ? cur : "#ffffff");
       cp.onChange(async (v) => {
@@ -6818,7 +7022,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
         );
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.toolbar")).setDesc(t("set.toolbarDesc")).addToggle((tg) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.toolbar")).setDesc(t("set.toolbarDesc")).addToggle((tg) => {
       tg.setValue(this.plugin.settings.showToolbar);
       tg.onChange(async (v) => {
         this.plugin.settings.showToolbar = v;
@@ -6826,7 +7030,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
         this.plugin.refreshAllViews();
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.editOnCreate")).setDesc(t("set.editOnCreateDesc")).addToggle((tg) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.editOnCreate")).setDesc(t("set.editOnCreateDesc")).addToggle((tg) => {
       tg.setValue(this.plugin.settings.editOnCreate);
       tg.onChange(async (v) => {
         this.plugin.settings.editOnCreate = v;
@@ -6837,7 +7041,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
     const defRoot = t("def.root");
     const defChild = t("def.child");
     const mkNameSetting = (name, desc, field, defVal) => {
-      const setting = new import_obsidian3.Setting(containerEl).setName(name).setDesc(desc);
+      const setting = new import_obsidian4.Setting(containerEl).setName(name).setDesc(desc);
       const resetEl = setting.controlEl.createEl("button", { text: "\u21BA" });
       resetEl.addClass("mz-reset-btn");
       const curVal = (this.plugin.settings.customNodeNames[lang] || {})[field];
@@ -6876,14 +7080,14 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
       "child",
       defChild
     );
-    new import_obsidian3.Setting(containerEl).setName(t("set.typeToEdit")).setDesc(t("set.typeToEditDesc")).addToggle((tg) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.typeToEdit")).setDesc(t("set.typeToEditDesc")).addToggle((tg) => {
       tg.setValue(this.plugin.settings.typeToEdit);
       tg.onChange(async (v) => {
         this.plugin.settings.typeToEdit = v;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.keys")).setHeading();
+    new import_obsidian4.Setting(containerEl).setName(t("set.keys")).setHeading();
     const kb = this.plugin.settings.keyBindings;
     const keyMap = [
       { key: "editNode", label: t("set.key.edit") },
@@ -6899,7 +7103,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
       { key: "navRight", label: t("set.key.right") }
     ];
     for (const item of keyMap) {
-      const setting = new import_obsidian3.Setting(containerEl).setName(item.label);
+      const setting = new import_obsidian4.Setting(containerEl).setName(item.label);
       const curVal = kb[item.key];
       const defVal = DEFAULT_KEYBINDINGS[item.key];
       const resetEl = setting.controlEl.createEl("button", { text: "\u21BA" });
@@ -6992,22 +7196,22 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
         });
       });
     }
-    new import_obsidian3.Setting(containerEl).setName(t("set.scroll")).setHeading();
-    new import_obsidian3.Setting(containerEl).setName(t("set.invertY")).addToggle((tg) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.scroll")).setHeading();
+    new import_obsidian4.Setting(containerEl).setName(t("set.invertY")).addToggle((tg) => {
       tg.setValue(kb.invertScrollY);
       tg.onChange(async (v) => {
         kb.invertScrollY = v;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.invertX")).addToggle((tg) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.invertX")).addToggle((tg) => {
       tg.setValue(kb.invertScrollX);
       tg.onChange(async (v) => {
         kb.invertScrollX = v;
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian3.Setting(containerEl).setName(t("set.invertZoom")).addToggle((tg) => {
+    new import_obsidian4.Setting(containerEl).setName(t("set.invertZoom")).addToggle((tg) => {
       tg.setValue(kb.invertZoom);
       tg.onChange(async (v) => {
         kb.invertZoom = v;
@@ -7021,7 +7225,7 @@ var MindMapSettingTab = class extends import_obsidian3.PluginSettingTab {
 };
 
 // src/main.ts
-var MindNodePlugin = class extends import_obsidian4.Plugin {
+var MindNodePlugin = class extends import_obsidian5.Plugin {
   constructor() {
     super(...arguments);
     this.settings = {
@@ -7042,6 +7246,10 @@ var MindNodePlugin = class extends import_obsidian4.Plugin {
       VIEW_TYPE_MINDMAP_STYLE,
       (leaf) => new StylePanelView(leaf, this)
     );
+    this.registerView(
+      VIEW_TYPE_MINDMAP_OUTLINE,
+      (leaf) => new MindMapOutlineView(leaf, this)
+    );
     this.addSettingTab(new MindMapSettingTab(this.app, this));
     this.addRibbonIcon("network", "New MindZJ", () => {
       void this.createNew();
@@ -7053,10 +7261,17 @@ var MindNodePlugin = class extends import_obsidian4.Plugin {
         void this.createNew();
       }
     });
+    this.addCommand({
+      id: "open-outline",
+      name: "Open MindZJ outline",
+      callback: () => {
+        void this.openOutlinePanel();
+      }
+    });
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
         var _a;
-        if (!(file instanceof import_obsidian4.TFolder))
+        if (!(file instanceof import_obsidian5.TFolder))
           return;
         menu.addItem(
           (i) => i.setTitle("New MindZJ").setIcon("network").onClick(() => {
@@ -7082,6 +7297,14 @@ var MindNodePlugin = class extends import_obsidian4.Plugin {
         }
       })
     );
+    this.app.workspace.on("active-leaf-change", (leaf) => {
+      if ((leaf == null ? void 0 : leaf.view) instanceof MindMapOutlineView)
+        return;
+      this.refreshOutline();
+      if ((leaf == null ? void 0 : leaf.view) instanceof MindMapView && !this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP_OUTLINE).length) {
+        void this.openOutlinePanel();
+      }
+    });
   }
   onunload() {
   }
@@ -7245,6 +7468,35 @@ var MindNodePlugin = class extends import_obsidian4.Plugin {
       l = (_a = this.app.workspace.getRightLeaf(false)) != null ? _a : this.app.workspace.getLeaf(true);
       await l.setViewState({
         type: VIEW_TYPE_MINDMAP_STYLE,
+        active: true
+      });
+    }
+    this.app.workspace.revealLeaf(l);
+  }
+  // ── Outline support ──────────────────────────────────────────
+  /** Called by MindMapView whenever node data changes. */
+  refreshOutline() {
+    for (const leaf of this.app.workspace.getLeavesOfType(
+      VIEW_TYPE_MINDMAP_OUTLINE
+    )) {
+      if (leaf.view instanceof MindMapOutlineView) {
+        leaf.view.refresh();
+      }
+    }
+  }
+  /** Open the MindZJ outline panel in the left sidebar. */
+  async openOutlinePanel() {
+    var _a;
+    const ls = this.app.workspace.getLeavesOfType(
+      VIEW_TYPE_MINDMAP_OUTLINE
+    );
+    let l;
+    if (ls.length) {
+      l = ls[0];
+    } else {
+      l = (_a = this.app.workspace.getLeftLeaf(false)) != null ? _a : this.app.workspace.getLeaf(true);
+      await l.setViewState({
+        type: VIEW_TYPE_MINDMAP_OUTLINE,
         active: true
       });
     }

@@ -91,6 +91,7 @@ export class MindMapView extends TextFileView {
     private mdSnapshot: string | null = null;
     private zoomLabel: HTMLSpanElement | null = null;
     private proxyTA: HTMLTextAreaElement | null = null;
+    private mdOutlineTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: MindNodePlugin) {
         super(leaf);
@@ -113,6 +114,15 @@ export class MindMapView extends TextFileView {
         if (isNaN(r) || isNaN(g) || isNaN(b))
             return `rgba(59,130,246,${alpha})`;
         return `rgba(${r},${g},${b},${alpha})`;
+    }
+    /** Notify the custom outline panel to re-read the node tree. */
+    private updateOutlineHeadings() {
+        this.plugin.refreshOutline();
+    }
+    /** Refresh outline when the view is closing (will show empty). */
+    private clearOutlineHeadings() {
+        // Delay slightly so the outline can detect the view is gone
+        setTimeout(() => this.plugin.refreshOutline(), 50);
     }
     private mkRoot(txt: string): MindNodeData {
         return {
@@ -162,6 +172,7 @@ export class MindMapView extends TextFileView {
             this.roots = [this.mkRoot(this.plugin.getRootName())];
         }
         if (this.roots.length && !this.selId) this.selId = this.roots[0].id;
+        this.updateOutlineHeadings();
         if (this.uiOk) {
             if (this.mdMode) this.renderMd();
             else this.fitAll();
@@ -175,6 +186,7 @@ export class MindMapView extends TextFileView {
     }
     private doSave() {
         this.requestSave();
+        this.updateOutlineHeadings();
     }
     private fitAll() {
         if (!this.cc || !this.roots.length) return;
@@ -226,6 +238,19 @@ export class MindMapView extends TextFileView {
         this.updateDevPanel();
         this.render();
     }
+    /** Expose the current root nodes for the outline panel. */
+    public getRoots(): MindNodeData[] {
+        return this.roots;
+    }
+    /** Select a node by id and pan the canvas to center it. */
+    public selectAndFocusNode(id: string) {
+        const nd = this.fAll(id);
+        if (!nd) return;
+        if (this.commitEdit) this.commitEdit();
+        this.sel1(id);
+        this.focusNode(nd);
+        this.render();
+    }
 
     // eslint-disable-next-line @typescript-eslint/require-await
     async onOpen() {
@@ -275,6 +300,15 @@ export class MindMapView extends TextFileView {
         this.mdCt = ct.createEl("textarea") as HTMLTextAreaElement;
         this.mdCt.addClass("mz-md-ta");
         this.mdCt.addClass("mz-hidden");
+        // Debounced outline update while editing in MD mode
+        this.mdCt.addEventListener("input", () => {
+            if (!this.mdMode) return;
+            if (this.mdOutlineTimer) clearTimeout(this.mdOutlineTimer);
+            this.mdOutlineTimer = setTimeout(
+                () => this.updateOutlineHeadings(),
+                300,
+            );
+        });
         this.bindEvts();
         window.addEventListener("keydown", this._kd, true);
         window.addEventListener("keyup", this._ku, true);
@@ -291,6 +325,8 @@ export class MindMapView extends TextFileView {
     async onClose() {
         if (this.commitEdit) this.commitEdit();
         this.clearProxy();
+        if (this.mdOutlineTimer) clearTimeout(this.mdOutlineTimer);
+        this.clearOutlineHeadings();
         this.uiOk = false;
         this.spaceDown = false;
         this.dragCv = false;
@@ -435,6 +471,9 @@ export class MindMapView extends TextFileView {
         btn("🔍 " + t("tb.search"), t("tb.tipSearch"), () =>
             this.toggleSearch(),
         );
+        btn("📑 " + t("outline.title"), t("outline.title"), () =>
+            this.plugin.openOutlinePanel(),
+        );
         btn(t("tb.settings"), t("tb.tipSettings"), () =>
             this.plugin.openPluginSettings(),
         );
@@ -484,6 +523,7 @@ export class MindMapView extends TextFileView {
             this.svgCt.toggleClass("mz-hidden", true);
             this.mdCt.toggleClass("mz-hidden", false);
             this.mdCt.value = this.roots2md();
+            this.updateOutlineHeadings();
         }
     }
     private roots2mdFromSnap(): string | null {

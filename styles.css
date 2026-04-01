@@ -732,3 +732,94 @@
     background: var(--background-modifier-border);
     color: var(--text-normal);
 }
+
+/* ===== MindZJ Outline Panel ===== */
+.mz-outline-ct {
+    padding: 0;
+    overflow-y: auto;
+    height: 100%;
+    font-size: 13px;
+}
+.mz-outline-tree {
+    padding: 4px 0;
+}
+.mz-outline-empty {
+    padding: 16px 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: center;
+}
+.mz-outline-item {
+    /* wrapper for row + children */
+}
+.mz-outline-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0 4px;
+    min-height: 24px;
+}
+.mz-outline-row:hover {
+    background: var(--background-modifier-hover);
+}
+.mz-outline-toggle {
+    width: 14px;
+    flex-shrink: 0;
+    font-size: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+}
+.mz-outline-toggle-active:hover {
+    color: var(--text-normal);
+}
+.mz-outline-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 3px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    line-height: 16px;
+    min-width: 18px;
+    text-align: center;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    border: 1px solid var(--background-modifier-border);
+}
+.mz-outline-h1 {
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+    border-color: var(--text-accent);
+}
+.mz-outline-h2 {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+.mz-outline-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--text-normal);
+}
+.mz-outline-text-root {
+    font-weight: 700;
+}
+.mz-outline-side {
+    font-size: 9px;
+    color: var(--text-faint);
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+.mz-outline-children {
+    /* children container */
+}
+.mz-outline-collapsed {
+    display: none !important;
+}

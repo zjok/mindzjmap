@@ -2,11 +2,13 @@
 import { Plugin, WorkspaceLeaf, TFolder, Menu } from "obsidian";
 import { MindMapView } from "./MindMapView";
 import { StylePanelView } from "./StylePanelView";
+import { MindMapOutlineView } from "./MindMapOutlineView";
 import { MindMapSettingTab } from "./SettingsTab";
 import { setLang, t } from "./i18n";
 import {
     VIEW_TYPE_MINDMAP,
     VIEW_TYPE_MINDMAP_STYLE,
+    VIEW_TYPE_MINDMAP_OUTLINE,
     MINDMAP_FILE_EXTENSION,
     MindMapStyle,
     PluginSettings,
@@ -41,6 +43,10 @@ export default class MindNodePlugin extends Plugin {
             VIEW_TYPE_MINDMAP_STYLE,
             (leaf) => new StylePanelView(leaf, this),
         );
+        this.registerView(
+            VIEW_TYPE_MINDMAP_OUTLINE,
+            (leaf) => new MindMapOutlineView(leaf, this),
+        );
         this.addSettingTab(new MindMapSettingTab(this.app, this));
         this.addRibbonIcon("network", "New MindZJ", () => {
             void this.createNew();
@@ -50,6 +56,13 @@ export default class MindNodePlugin extends Plugin {
             name: "New mind map",
             callback: () => {
                 void this.createNew();
+            },
+        });
+        this.addCommand({
+            id: "open-outline",
+            name: "Open MindZJ outline",
+            callback: () => {
+                void this.openOutlinePanel();
             },
         });
         this.registerEvent(
@@ -91,6 +104,20 @@ export default class MindNodePlugin extends Plugin {
                 }
             }),
         );
+
+        // Refresh the custom outline panel whenever the active leaf changes.
+        // Auto-open the outline panel when a mind map view becomes active.
+        this.app.workspace.on("active-leaf-change", (leaf) => {
+            if (leaf?.view instanceof MindMapOutlineView) return;
+            this.refreshOutline();
+            if (
+                leaf?.view instanceof MindMapView &&
+                !this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP_OUTLINE)
+                    .length
+            ) {
+                void this.openOutlinePanel();
+            }
+        });
     }
 
     onunload(): void {
@@ -268,6 +295,37 @@ export default class MindNodePlugin extends Plugin {
                 this.app.workspace.getLeaf(true);
             await l.setViewState({
                 type: VIEW_TYPE_MINDMAP_STYLE,
+                active: true,
+            });
+        }
+        this.app.workspace.revealLeaf(l);
+    }
+
+    // ── Outline support ──────────────────────────────────────────
+    /** Called by MindMapView whenever node data changes. */
+    refreshOutline() {
+        for (const leaf of this.app.workspace.getLeavesOfType(
+            VIEW_TYPE_MINDMAP_OUTLINE,
+        )) {
+            if (leaf.view instanceof MindMapOutlineView) {
+                leaf.view.refresh();
+            }
+        }
+    }
+    /** Open the MindZJ outline panel in the left sidebar. */
+    async openOutlinePanel() {
+        const ls = this.app.workspace.getLeavesOfType(
+            VIEW_TYPE_MINDMAP_OUTLINE,
+        );
+        let l: WorkspaceLeaf;
+        if (ls.length) {
+            l = ls[0];
+        } else {
+            l =
+                this.app.workspace.getLeftLeaf(false) ??
+                this.app.workspace.getLeaf(true);
+            await l.setViewState({
+                type: VIEW_TYPE_MINDMAP_OUTLINE,
                 active: true,
             });
         }

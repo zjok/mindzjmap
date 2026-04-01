@@ -402,4 +402,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 };
 export const VIEW_TYPE_MINDMAP = "mindzj-view";
 export const VIEW_TYPE_MINDMAP_STYLE = "mindzj-style-panel";
+export const VIEW_TYPE_MINDMAP_OUTLINE = "mindzj-outline";
 export const MINDMAP_FILE_EXTENSION = "mindzj";
