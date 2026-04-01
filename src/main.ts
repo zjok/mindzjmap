@@ -105,18 +105,17 @@ export default class MindNodePlugin extends Plugin {
             }),
         );
 
-        // Refresh the custom outline panel whenever the active leaf changes.
-        // Skip if the outline panel itself became active (avoids DOM rebuild
-        // that would swallow clicks).
-        // Auto-open when a mind map OR markdown view becomes active.
+        // Refresh the custom outline panel whenever a content view becomes
+        // active.  Skip sidebar panels (file explorer, search, settings …)
+        // so the outline keeps showing the last editor's content.
         this.registerEvent(
             this.app.workspace.on("active-leaf-change", (leaf) => {
                 if (leaf?.view instanceof MindMapOutlineView) return;
-                this.refreshOutline();
                 const isMindMap = leaf?.view instanceof MindMapView;
                 const isMarkdown = leaf?.view?.getViewType() === "markdown";
+                if (!isMindMap && !isMarkdown) return;
+                this.refreshOutline();
                 if (
-                    (isMindMap || isMarkdown) &&
                     !this.app.workspace.getLeavesOfType(
                         VIEW_TYPE_MINDMAP_OUTLINE,
                     ).length

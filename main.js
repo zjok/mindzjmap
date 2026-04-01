@@ -7393,10 +7393,12 @@ var MindNodePlugin = class extends import_obsidian5.Plugin {
         var _a;
         if ((leaf == null ? void 0 : leaf.view) instanceof MindMapOutlineView)
           return;
-        this.refreshOutline();
         const isMindMap = (leaf == null ? void 0 : leaf.view) instanceof MindMapView;
         const isMarkdown = ((_a = leaf == null ? void 0 : leaf.view) == null ? void 0 : _a.getViewType()) === "markdown";
-        if ((isMindMap || isMarkdown) && !this.app.workspace.getLeavesOfType(
+        if (!isMindMap && !isMarkdown)
+          return;
+        this.refreshOutline();
+        if (!this.app.workspace.getLeavesOfType(
           VIEW_TYPE_MINDMAP_OUTLINE
         ).length) {
           void this.openOutlinePanel();
