@@ -79,8 +79,12 @@ export class MindMapView extends TextFileView {
     private popClose: (() => void) | null = null;
     private mdMode = false;
     private mdBtn: HTMLButtonElement | null = null;
-    private clipboard: { data: string; isRoot: boolean; cut: boolean } | null =
-        null;
+    private clipboard: {
+        data: string;
+        isRoot: boolean;
+        cut: boolean;
+        multi?: boolean;
+    } | null = null;
     private clipboardText: string | null = null;
     private activeMenu: Menu | null = null;
     private searchBar: HTMLDivElement | null = null;
@@ -2019,6 +2023,48 @@ export class MindMapView extends TextFileView {
     }
     private copyNode(cut: boolean) {
         if (!this.selId) return;
+
+        // ── Multi-node copy ────────────────────────────────────────
+        if (this.isMulti()) {
+            const ids = this.allSel();
+            const raw: MindNodeData[] = [];
+            for (const id of ids) {
+                const n = this.fAll(id);
+                if (n) raw.push(n);
+            }
+            // Filter out nodes that are descendants of another selected
+            // node to avoid duplicates when pasting.
+            const nodes = raw.filter((n) => {
+                for (const o of raw) {
+                    if (o.id !== n.id && this.fN(n.id, o)) return false;
+                }
+                return true;
+            });
+            if (!nodes.length) return;
+            this.clipboard = {
+                data: JSON.stringify(nodes),
+                isRoot: nodes.some((n) => !!n.isRoot),
+                cut,
+                multi: true,
+            };
+            const allText = nodes.map((n) => n.text).join("\n");
+            this.clipboardText = allText;
+            navigator.clipboard.writeText(allText).catch(() => {});
+            if (cut) {
+                this.saveS();
+                for (const id of ids) {
+                    if (this.roots.some((r) => r.id === id))
+                        this.roots = this.roots.filter((r) => r.id !== id);
+                    else this.remAll(id);
+                }
+                this.clrSel();
+                this.render();
+                this.doSave();
+            }
+            return;
+        }
+
+        // ── Single-node copy (existing logic) ──────────────────────
         const nd = this.fAll(this.selId);
         if (!nd) return;
         this.clipboard = { data: JSON.stringify(nd), isRoot: !!nd.isRoot, cut };
@@ -2039,6 +2085,52 @@ export class MindMapView extends TextFileView {
     }
     private pasteNode(strip: boolean) {
         if (!this.clipboard) return;
+
+        // ── Multi-node paste ───────────────────────────────────────
+        if (this.clipboard.multi) {
+            const clones: MindNodeData[] = JSON.parse(this.clipboard.data);
+            const reId = (n: MindNodeData) => {
+                n.id = crypto.randomUUID();
+                for (const c of n.children) reId(c);
+            };
+            if (!this.clipboard.cut) {
+                for (const n of clones) reId(n);
+            } else {
+                this.clipboard = null;
+            }
+            if (strip) {
+                const s = (n: MindNodeData) => {
+                    n.styleOverride = undefined;
+                    n.connectionColor = undefined;
+                    n.connectionWidth = undefined;
+                    for (const c of n.children) s(c);
+                };
+                for (const n of clones) s(n);
+            }
+            this.saveS();
+            for (const clone of clones) {
+                if (clone.isRoot) {
+                    const last = this.roots[this.roots.length - 1];
+                    clone.x = last?.x ?? 0;
+                    clone.y = (last?.y ?? 0) + 200;
+                    this.roots.push(clone);
+                } else {
+                    clone.isRoot = false;
+                    if (this.selId) {
+                        const p = this.fAll(this.selId);
+                        if (p) p.children.push(clone);
+                    } else {
+                        this.roots.push({ ...clone, isRoot: true });
+                    }
+                }
+            }
+            if (clones.length) this.sel1(clones[0].id);
+            this.render();
+            this.doSave();
+            return;
+        }
+
+        // ── Single-node paste (existing logic) ─────────────────────
         const clone: MindNodeData = JSON.parse(this.clipboard.data);
         if (!this.clipboard.cut) {
             const reId = (n: MindNodeData) => {

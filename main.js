@@ -5201,6 +5201,47 @@ var MindMapView = class extends import_obsidian.TextFileView {
   copyNode(cut) {
     if (!this.selId)
       return;
+    if (this.isMulti()) {
+      const ids = this.allSel();
+      const raw = [];
+      for (const id of ids) {
+        const n = this.fAll(id);
+        if (n)
+          raw.push(n);
+      }
+      const nodes = raw.filter((n) => {
+        for (const o of raw) {
+          if (o.id !== n.id && this.fN(n.id, o))
+            return false;
+        }
+        return true;
+      });
+      if (!nodes.length)
+        return;
+      this.clipboard = {
+        data: JSON.stringify(nodes),
+        isRoot: nodes.some((n) => !!n.isRoot),
+        cut,
+        multi: true
+      };
+      const allText = nodes.map((n) => n.text).join("\n");
+      this.clipboardText = allText;
+      navigator.clipboard.writeText(allText).catch(() => {
+      });
+      if (cut) {
+        this.saveS();
+        for (const id of ids) {
+          if (this.roots.some((r) => r.id === id))
+            this.roots = this.roots.filter((r) => r.id !== id);
+          else
+            this.remAll(id);
+        }
+        this.clrSel();
+        this.render();
+        this.doSave();
+      }
+      return;
+    }
     const nd = this.fAll(this.selId);
     if (!nd)
       return;
@@ -5220,9 +5261,57 @@ var MindMapView = class extends import_obsidian.TextFileView {
     }
   }
   pasteNode(strip) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     if (!this.clipboard)
       return;
+    if (this.clipboard.multi) {
+      const clones = JSON.parse(this.clipboard.data);
+      const reId = (n) => {
+        n.id = crypto.randomUUID();
+        for (const c of n.children)
+          reId(c);
+      };
+      if (!this.clipboard.cut) {
+        for (const n of clones)
+          reId(n);
+      } else {
+        this.clipboard = null;
+      }
+      if (strip) {
+        const s = (n) => {
+          n.styleOverride = void 0;
+          n.connectionColor = void 0;
+          n.connectionWidth = void 0;
+          for (const c of n.children)
+            s(c);
+        };
+        for (const n of clones)
+          s(n);
+      }
+      this.saveS();
+      for (const clone2 of clones) {
+        if (clone2.isRoot) {
+          const last = this.roots[this.roots.length - 1];
+          clone2.x = (_a = last == null ? void 0 : last.x) != null ? _a : 0;
+          clone2.y = ((_b = last == null ? void 0 : last.y) != null ? _b : 0) + 200;
+          this.roots.push(clone2);
+        } else {
+          clone2.isRoot = false;
+          if (this.selId) {
+            const p = this.fAll(this.selId);
+            if (p)
+              p.children.push(clone2);
+          } else {
+            this.roots.push({ ...clone2, isRoot: true });
+          }
+        }
+      }
+      if (clones.length)
+        this.sel1(clones[0].id);
+      this.render();
+      this.doSave();
+      return;
+    }
     const clone = JSON.parse(this.clipboard.data);
     if (!this.clipboard.cut) {
       const reId = (n) => {
@@ -5246,8 +5335,8 @@ var MindMapView = class extends import_obsidian.TextFileView {
     this.saveS();
     if (clone.isRoot) {
       const last = this.roots[this.roots.length - 1];
-      clone.x = (_a = last == null ? void 0 : last.x) != null ? _a : 0;
-      clone.y = ((_b = last == null ? void 0 : last.y) != null ? _b : 0) + 200;
+      clone.x = (_c = last == null ? void 0 : last.x) != null ? _c : 0;
+      clone.y = ((_d = last == null ? void 0 : last.y) != null ? _d : 0) + 200;
       this.roots.push(clone);
     } else {
       clone.isRoot = false;
