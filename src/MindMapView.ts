@@ -105,6 +105,15 @@ export class MindMapView extends TextFileView {
         if (this.style.customRainbows?.[p]) return this.style.customRainbows[p];
         return RAINBOW_PALETTES[p] || RAINBOW_PALETTES.classic;
     }
+    private hexToRgba(hex: string, alpha: number): string {
+        const h = hex.replace("#", "");
+        const r = parseInt(h.substring(0, 2), 16);
+        const g = parseInt(h.substring(2, 4), 16);
+        const b = parseInt(h.substring(4, 6), 16);
+        if (isNaN(r) || isNaN(g) || isNaN(b))
+            return `rgba(59,130,246,${alpha})`;
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
     private mkRoot(txt: string): MindNodeData {
         return {
             id: crypto.randomUUID(),
@@ -482,24 +491,38 @@ export class MindMapView extends TextFileView {
         try {
             const rs = JSON.parse(this.mdSnapshot) as MindNodeData[];
             let m = "";
-            const n2md = (
+            const fmtRight = (
                 nd: MindNodeData,
-                d: number,
-                marker: string,
+                depth: number,
+                sibIdx: number,
             ): string => {
                 const tx = nd.text.replace(/\n/g, " ");
-                const l = "\t".repeat(d - 1) + marker + " " + tx;
-                let r = l + "\n";
-                for (const c of nd.children) r += n2md(c, d + 1, marker);
+                let line: string;
+                if (depth === 1) line = "## " + tx;
+                else if (depth === 2) line = "### " + tx;
+                else if (depth === 3) line = "##### " + tx;
+                else if (depth === 4) line = "\t" + (sibIdx + 1) + ". " + tx;
+                else line = "\t".repeat(depth - 3) + "- " + tx;
+                let r = line + "\n";
+                for (let i = 0; i < nd.children.length; i++)
+                    r += fmtRight(nd.children[i], depth + 1, i);
+                return r;
+            };
+            const fmtLeft = (nd: MindNodeData, depth: number): string => {
+                const tx = nd.text.replace(/\n/g, " ");
+                const line = "\t".repeat(depth - 1) + "/ " + tx;
+                let r = line + "\n";
+                for (const c of nd.children) r += fmtLeft(c, depth + 1);
                 return r;
             };
             for (let i = 0; i < rs.length; i++) {
                 const r = rs[i];
                 const rightCh = r.children.filter((c) => c.side !== "left");
                 const leftCh = r.children.filter((c) => c.side === "left");
-                m += r.text.replace(/\n/g, " ") + "\n";
-                for (const c of rightCh) m += n2md(c, 1, "-");
-                for (const c of leftCh) m += n2md(c, 1, "*");
+                m += "# " + r.text.replace(/\n/g, " ") + "\n";
+                for (let j = 0; j < rightCh.length; j++)
+                    m += fmtRight(rightCh[j], 1, j);
+                for (const c of leftCh) m += fmtLeft(c, 1);
                 if (i < rs.length - 1) m += "\n";
             }
             return m;
@@ -513,18 +536,32 @@ export class MindMapView extends TextFileView {
             const r = this.roots[i];
             const rightCh = r.children.filter((c) => c.side !== "left");
             const leftCh = r.children.filter((c) => c.side === "left");
-            m += r.text.replace(/\n/g, " ") + "\n";
-            for (const c of rightCh) m += this.n2md(c, 1, "-");
-            for (const c of leftCh) m += this.n2md(c, 1, "*");
+            m += "# " + r.text.replace(/\n/g, " ") + "\n";
+            for (let j = 0; j < rightCh.length; j++)
+                m += this.n2mdRight(rightCh[j], 1, j);
+            for (const c of leftCh) m += this.n2mdLeft(c, 1);
             if (i < this.roots.length - 1) m += "\n";
         }
         return m;
     }
-    private n2md(nd: MindNodeData, d: number, marker: string): string {
+    private n2mdRight(nd: MindNodeData, depth: number, sibIdx: number): string {
         const tx = nd.text.replace(/\n/g, " ");
-        const l = "\t".repeat(d - 1) + marker + " " + tx;
-        let r = l + "\n";
-        for (const c of nd.children) r += this.n2md(c, d + 1, marker);
+        let line: string;
+        if (depth === 1) line = "## " + tx;
+        else if (depth === 2) line = "### " + tx;
+        else if (depth === 3) line = "##### " + tx;
+        else if (depth === 4) line = "\t" + (sibIdx + 1) + ". " + tx;
+        else line = "\t".repeat(depth - 3) + "- " + tx;
+        let r = line + "\n";
+        for (let i = 0; i < nd.children.length; i++)
+            r += this.n2mdRight(nd.children[i], depth + 1, i);
+        return r;
+    }
+    private n2mdLeft(nd: MindNodeData, depth: number): string {
+        const tx = nd.text.replace(/\n/g, " ");
+        const line = "\t".repeat(depth - 1) + "/ " + tx;
+        let r = line + "\n";
+        for (const c of nd.children) r += this.n2mdLeft(c, depth + 1);
         return r;
     }
     private renderMd() {
@@ -537,38 +574,89 @@ export class MindMapView extends TextFileView {
         let cur: MindNodeData | null = null;
         const stk: [number, MindNodeData][] = [];
         for (const line of lines) {
-            const m = line.match(/^(\t*)([-*])\s+(.*)/);
-            if (m) {
-                const dep = m[1].length + 1,
-                    marker = m[2],
-                    txt = m[3].trim();
-                const side = marker === "*" ? "left" : "right";
-                const nd: MindNodeData = {
-                    id: crypto.randomUUID(),
-                    text: txt,
-                    x: 0,
-                    y: 0,
-                    width: this.calcW(txt, false),
-                    height: this.calcH(txt, false),
-                    children: [],
-                    side,
-                };
-                while (stk.length && stk[stk.length - 1][0] >= dep) stk.pop();
-                if (stk.length) stk[stk.length - 1][1].children.push(nd);
-                else if (cur) cur.children.push(nd);
-                stk.push([dep, nd]);
-            } else {
-                const txt = line.trim();
-                if (!txt) continue;
-                cur = this.mkRoot(txt);
-                if (nr.length) {
-                    cur.x = nr[nr.length - 1].x;
-                    cur.y = nr[nr.length - 1].y + 200;
+            let depth: number;
+            let txt: string;
+            let side: "left" | "right" = "right";
+            // Heading format: # = root, ## = depth1, ### = depth2, 4+ # = depth3
+            const headingM = line.match(/^(#{1,})\s+(.*)/);
+            if (headingM) {
+                const level = headingM[1].length;
+                txt = headingM[2].trim();
+                if (level === 1) {
+                    // Root node
+                    cur = this.mkRoot(txt);
+                    if (nr.length) {
+                        cur.x = nr[nr.length - 1].x;
+                        cur.y = nr[nr.length - 1].y + 200;
+                    }
+                    nr.push(cur);
+                    stk.length = 0;
+                    stk.push([0, cur]);
+                    continue;
                 }
-                nr.push(cur);
-                stk.length = 0;
-                stk.push([0, cur]);
+                // ## = depth1, ### = depth2, ####+ = depth3
+                depth = Math.min(level - 1, 3);
+                side = "right";
+            } else {
+                // Left-side marker: /
+                const leftM = line.match(/^(\t*)\/ (.*)/);
+                if (leftM) {
+                    depth = leftM[1].length + 1;
+                    txt = leftM[2].trim();
+                    side = "left";
+                } else {
+                    // Numbered list (depth 4): \t1. text
+                    const numM = line.match(/^(\t+)\d+\.\s+(.*)/);
+                    if (numM) {
+                        depth = numM[1].length + 3;
+                        txt = numM[2].trim();
+                        side = "right";
+                    } else {
+                        // Bullet list (depth 5+): \t\t- text
+                        const bulletM = line.match(/^(\t+)-\s+(.*)/);
+                        if (bulletM) {
+                            depth = bulletM[1].length + 3;
+                            txt = bulletM[2].trim();
+                            side = "right";
+                        } else {
+                            // Legacy: old - or * markers (backward compat)
+                            const oldM = line.match(/^(\t*)([-*])\s+(.*)/);
+                            if (oldM) {
+                                depth = oldM[1].length + 1;
+                                txt = oldM[3].trim();
+                                side = oldM[2] === "*" ? "left" : "right";
+                            } else {
+                                // Plain text = root (legacy format)
+                                txt = line.trim();
+                                if (!txt) continue;
+                                cur = this.mkRoot(txt);
+                                if (nr.length) {
+                                    cur.x = nr[nr.length - 1].x;
+                                    cur.y = nr[nr.length - 1].y + 200;
+                                }
+                                nr.push(cur);
+                                stk.length = 0;
+                                stk.push([0, cur]);
+                                continue;
+                            }
+                        }
+                    }
+                }
             }
+            const nd: MindNodeData = {
+                id: crypto.randomUUID(),
+                text: txt,
+                x: 0,
+                y: 0,
+                width: this.calcW(txt, false),
+                height: this.calcH(txt, false),
+                children: [],
+                side,
+            };
+            while (stk.length && stk[stk.length - 1][0] >= depth) stk.pop();
+            if (stk.length) stk[stk.length - 1][1].children.push(nd);
+            else if (cur) cur.children.push(nd);
+            stk.push([depth, nd]);
         }
         if (nr.length) this.roots = nr;
     }
@@ -1086,6 +1174,7 @@ export class MindMapView extends TextFileView {
             min: 0,
             max: 8,
         });
+        R(s4, t("sm.boxSelColor"), "boxSelectionColor", "color");
         const s5 = sec("🖼️", t("sm.canvasBg"));
         R(s5, t("sm.canvasBg"), "canvasBg", "color");
         const s6 = sec("🔧", t("sm.showToolbar"));
@@ -1569,6 +1658,7 @@ export class MindMapView extends TextFileView {
         if (tag === "input" || tag === "textarea" || tag === "select") {
             return !this.svgCt?.contains(t);
         }
+        if (t.isContentEditable) return true;
         return false;
     }
     private _kd = (e: KeyboardEvent) => {
@@ -1891,6 +1981,10 @@ export class MindMapView extends TextFileView {
         const nd = this.fAll(this.selId);
         if (!nd) return;
         this.clipboard = { data: JSON.stringify(nd), isRoot: !!nd.isRoot, cut };
+        // Also write to system clipboard so paste works in other text fields
+        navigator.clipboard.writeText(nd.text).catch(() => {
+            /* ignore */
+        });
         if (cut) {
             this.saveS();
             if (nd.isRoot)
@@ -2902,8 +2996,9 @@ export class MindMapView extends TextFileView {
             "http://www.w3.org/2000/svg",
             "rect",
         );
-        this.boxEl.setAttribute("fill", "rgba(59,130,246,0.06)");
-        this.boxEl.setAttribute("stroke", "rgba(59,130,246,0.4)");
+        const bsc = this.style.boxSelectionColor || "#3b82f6";
+        this.boxEl.setAttribute("fill", this.hexToRgba(bsc, 0.06));
+        this.boxEl.setAttribute("stroke", this.hexToRgba(bsc, 0.4));
         this.boxEl.setAttribute("stroke-width", "1");
         this.boxEl.setAttribute("stroke-dasharray", "6 3");
         this.boxEl.setAttribute("rx", "4");
@@ -3219,7 +3314,13 @@ export class MindMapView extends TextFileView {
                     "http://www.w3.org/2000/svg",
                     "rect",
                 );
-                ind.setAttribute("fill", "rgba(59,130,246,0.12)");
+                ind.setAttribute(
+                    "fill",
+                    this.hexToRgba(
+                        this.style.boxSelectionColor || "#3b82f6",
+                        0.12,
+                    ),
+                );
                 ind.setAttribute("stroke", this.style.selectionColor); // eslint-disable-line
                 ind.setAttribute("stroke-width", "2");
                 ind.setAttribute("rx", String(this.style.nodeBorderRadius));

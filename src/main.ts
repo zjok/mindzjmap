@@ -67,11 +67,20 @@ export default class MindNodePlugin extends Plugin {
                 if (m.items?.length > 1) {
                     const mzj = m.items.pop();
                     if (mzj) {
-                        const idx = m.items.findIndex(
-                            (it) =>
-                                (it.titleEl?.textContent ?? it.title) ===
-                                "New folder",
-                        );
+                        const idx = m.items.findIndex((it) => {
+                            const txt = (
+                                it.titleEl?.textContent ??
+                                it.title ??
+                                ""
+                            )
+                                .toLowerCase()
+                                .trim();
+                            return (
+                                txt === "new folder" ||
+                                txt === "新建文件夹" ||
+                                txt.includes("new folder")
+                            );
+                        });
                         if (idx >= 0) {
                             mzj.section = m.items[idx].section;
                             m.items.splice(idx + 1, 0, mzj);

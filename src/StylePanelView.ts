@@ -261,6 +261,7 @@ export class StylePanelView extends ItemView {
         mkNum(s4, t("sm.selOffset"), "selectionOutlineOffset", -5, 20);
         mkColor(s4, t("sm.editOutline"), "editOutlineColor");
         mkRange(s4, t("sm.editOutlineWidth"), "editOutlineWidth", 0, 8);
+        mkColor(s4, t("sm.boxSelColor"), "boxSelectionColor");
 
         // Canvas
         const s5 = mkSec("🖼️", t("sm.canvasBg"));

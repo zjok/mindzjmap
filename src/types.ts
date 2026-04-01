@@ -70,6 +70,7 @@ export interface MindMapStyle {
     selectionOutlineOffset: number;
     editOutlineColor: string;
     editOutlineWidth: number;
+    boxSelectionColor: string;
     textAlign: TextAlign;
     nodePadX: number;
     nodeLineHeight: number;
@@ -369,6 +370,7 @@ export const DEFAULT_STYLE: MindMapStyle = {
     selectionOutlineOffset: 2,
     editOutlineColor: "#3bfb2d",
     editOutlineWidth: 5,
+    boxSelectionColor: "#3b82f6",
     textAlign: "center",
     nodePadX: 10,
     nodeLineHeight: 1.5,
