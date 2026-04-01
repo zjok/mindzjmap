@@ -6840,45 +6840,39 @@ var MindMapOutlineView = class extends import_obsidian3.ItemView {
   async onClose() {
     this.treeEl = null;
   }
-  /** Get the currently active MindMapView (if any). */
-  getActiveMapView() {
-    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP);
-    const active = this.app.workspace.activeLeaf;
-    if (active && active.view instanceof MindMapView)
-      return active.view;
-    for (const l of leaves) {
-      if (l.view instanceof MindMapView)
-        return l.view;
-    }
-    return null;
-  }
-  /** Rebuild the outline tree from the active mind map. */
+  // ── public entry point ───────────────────────────────────────
+  /** Rebuild the outline tree from the currently active leaf. */
   refresh() {
     if (!this.treeEl)
       return;
     this.treeEl.empty();
-    const view = this.getActiveMapView();
-    if (!view) {
-      const empty = this.treeEl.createEl("div", {
-        text: t("outline.empty")
-      });
-      empty.addClass("mz-outline-empty");
+    const active = this.app.workspace.activeLeaf;
+    if (!active) {
+      this.showEmpty();
       return;
     }
+    if (active.view instanceof MindMapView) {
+      this.refreshMindMap(active.view);
+      return;
+    }
+    if (active.view instanceof import_obsidian3.MarkdownView) {
+      this.refreshMarkdown(active.view);
+      return;
+    }
+    this.showEmpty();
+  }
+  // ── mind map outline ─────────────────────────────────────────
+  refreshMindMap(view) {
     const roots = view.getRoots();
     if (!roots.length) {
-      const empty = this.treeEl.createEl("div", {
-        text: t("outline.empty")
-      });
-      empty.addClass("mz-outline-empty");
+      this.showEmpty();
       return;
     }
     for (const root of roots) {
-      this.buildNode(this.treeEl, root, 0, view);
+      this.buildMindMapNode(this.treeEl, root, 0, view);
     }
   }
-  /** Recursively build a tree node element. */
-  buildNode(parent, nd, depth, view) {
+  buildMindMapNode(parent, nd, depth, view) {
     const item = parent.createEl("div");
     item.addClass("mz-outline-item");
     const row = item.createEl("div");
@@ -6917,9 +6911,9 @@ var MindMapOutlineView = class extends import_obsidian3.ItemView {
       const rightCh = nd.children.filter((c) => c.side !== "left");
       const leftCh = nd.children.filter((c) => c.side === "left");
       for (const c of rightCh)
-        this.buildNode(childCt, c, depth + 1, view);
+        this.buildMindMapNode(childCt, c, depth + 1, view);
       for (const c of leftCh)
-        this.buildNode(childCt, c, depth + 1, view);
+        this.buildMindMapNode(childCt, c, depth + 1, view);
       let collapsed = false;
       toggle.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -6928,6 +6922,105 @@ var MindMapOutlineView = class extends import_obsidian3.ItemView {
         childCt.toggleClass("mz-outline-collapsed", collapsed);
       });
     }
+  }
+  // ── markdown outline ─────────────────────────────────────────
+  refreshMarkdown(mdView) {
+    const file = mdView.file;
+    if (!file) {
+      this.showEmpty();
+      return;
+    }
+    const cache = this.app.metadataCache.getFileCache(file);
+    const rawHeadings = cache == null ? void 0 : cache.headings;
+    if (!rawHeadings || !rawHeadings.length) {
+      this.showEmpty();
+      return;
+    }
+    const tree = this.buildMdTree(rawHeadings);
+    for (const node of tree) {
+      this.renderMdNode(this.treeEl, node, 0, mdView);
+    }
+  }
+  /** Convert a flat HeadingCache[] list into a nested tree. */
+  buildMdTree(headings) {
+    var _a, _b, _c;
+    const roots = [];
+    const stack = [];
+    for (const h of headings) {
+      const node = {
+        heading: h.heading,
+        level: h.level,
+        line: (_c = (_b = (_a = h.position) == null ? void 0 : _a.start) == null ? void 0 : _b.line) != null ? _c : 0,
+        children: []
+      };
+      while (stack.length && stack[stack.length - 1].level >= h.level)
+        stack.pop();
+      if (stack.length)
+        stack[stack.length - 1].children.push(node);
+      else
+        roots.push(node);
+      stack.push(node);
+    }
+    return roots;
+  }
+  /** Recursively render a markdown heading node. */
+  renderMdNode(parent, node, depth, mdView) {
+    const item = parent.createEl("div");
+    item.addClass("mz-outline-item");
+    const row = item.createEl("div");
+    row.addClass("mz-outline-row");
+    row.style.paddingLeft = depth * 16 + 8 + "px";
+    const hasChildren = node.children.length > 0;
+    const toggle = row.createEl("span");
+    toggle.addClass("mz-outline-toggle");
+    if (hasChildren) {
+      toggle.innerText = "\u25BC";
+      toggle.addClass("mz-outline-toggle-active");
+    } else {
+      toggle.innerText = " ";
+    }
+    const badge = row.createEl("span", { text: "H" + node.level });
+    badge.addClass("mz-outline-badge");
+    badge.addClass("mz-outline-h" + node.level);
+    const text = row.createEl("span", { text: node.heading });
+    text.addClass("mz-outline-text");
+    if (node.level === 1)
+      text.addClass("mz-outline-text-root");
+    const targetLine = node.line;
+    row.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const editor = mdView.editor;
+      if (editor) {
+        editor.setCursor(targetLine, 0);
+        editor.scrollIntoView(
+          {
+            from: { line: targetLine, ch: 0 },
+            to: { line: targetLine, ch: 0 }
+          },
+          true
+        );
+      }
+    });
+    if (hasChildren) {
+      const childCt = item.createEl("div");
+      childCt.addClass("mz-outline-children");
+      for (const c of node.children)
+        this.renderMdNode(childCt, c, depth + 1, mdView);
+      let collapsed = false;
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        toggle.innerText = collapsed ? "\u25B6" : "\u25BC";
+        childCt.toggleClass("mz-outline-collapsed", collapsed);
+      });
+    }
+  }
+  // ── helpers ───────────────────────────────────────────────────
+  showEmpty() {
+    if (!this.treeEl)
+      return;
+    const el = this.treeEl.createEl("div", { text: t("outline.empty") });
+    el.addClass("mz-outline-empty");
   }
 };
 
@@ -7297,14 +7390,29 @@ var MindNodePlugin = class extends import_obsidian5.Plugin {
         }
       })
     );
-    this.app.workspace.on("active-leaf-change", (leaf) => {
-      if ((leaf == null ? void 0 : leaf.view) instanceof MindMapOutlineView)
-        return;
-      this.refreshOutline();
-      if ((leaf == null ? void 0 : leaf.view) instanceof MindMapView && !this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP_OUTLINE).length) {
-        void this.openOutlinePanel();
-      }
-    });
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", (leaf) => {
+        var _a;
+        if ((leaf == null ? void 0 : leaf.view) instanceof MindMapOutlineView)
+          return;
+        this.refreshOutline();
+        const isMindMap = (leaf == null ? void 0 : leaf.view) instanceof MindMapView;
+        const isMarkdown = ((_a = leaf == null ? void 0 : leaf.view) == null ? void 0 : _a.getViewType()) === "markdown";
+        if ((isMindMap || isMarkdown) && !this.app.workspace.getLeavesOfType(
+          VIEW_TYPE_MINDMAP_OUTLINE
+        ).length) {
+          void this.openOutlinePanel();
+        }
+      })
+    );
+    this.registerEvent(
+      this.app.metadataCache.on("changed", (file) => {
+        var _a;
+        if (file.extension === "md" && file.path === ((_a = this.app.workspace.getActiveFile()) == null ? void 0 : _a.path)) {
+          this.refreshOutline();
+        }
+      })
+    );
   }
   onunload() {
   }

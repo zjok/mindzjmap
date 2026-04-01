@@ -106,18 +106,36 @@ export default class MindNodePlugin extends Plugin {
         );
 
         // Refresh the custom outline panel whenever the active leaf changes.
-        // Auto-open the outline panel when a mind map view becomes active.
-        this.app.workspace.on("active-leaf-change", (leaf) => {
-            if (leaf?.view instanceof MindMapOutlineView) return;
-            this.refreshOutline();
-            if (
-                leaf?.view instanceof MindMapView &&
-                !this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP_OUTLINE)
-                    .length
-            ) {
-                void this.openOutlinePanel();
-            }
-        });
+        // Skip if the outline panel itself became active (avoids DOM rebuild
+        // that would swallow clicks).
+        // Auto-open when a mind map OR markdown view becomes active.
+        this.registerEvent(
+            this.app.workspace.on("active-leaf-change", (leaf) => {
+                if (leaf?.view instanceof MindMapOutlineView) return;
+                this.refreshOutline();
+                const isMindMap = leaf?.view instanceof MindMapView;
+                const isMarkdown = leaf?.view?.getViewType() === "markdown";
+                if (
+                    (isMindMap || isMarkdown) &&
+                    !this.app.workspace.getLeavesOfType(
+                        VIEW_TYPE_MINDMAP_OUTLINE,
+                    ).length
+                ) {
+                    void this.openOutlinePanel();
+                }
+            }),
+        );
+        // Refresh outline when the *active* .md file's metadata changes.
+        this.registerEvent(
+            this.app.metadataCache.on("changed", (file) => {
+                if (
+                    file.extension === "md" &&
+                    file.path === this.app.workspace.getActiveFile()?.path
+                ) {
+                    this.refreshOutline();
+                }
+            }),
+        );
     }
 
     onunload(): void {

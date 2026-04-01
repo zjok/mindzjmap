@@ -1,5 +1,5 @@
 // src/MindMapOutlineView.ts
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ItemView, WorkspaceLeaf, MarkdownView } from "obsidian";
 import {
     VIEW_TYPE_MINDMAP_OUTLINE,
     VIEW_TYPE_MINDMAP,
@@ -8,6 +8,14 @@ import {
 import { t } from "./i18n";
 import { MindMapView } from "./MindMapView";
 import type MindNodePlugin from "./main";
+
+/** Lightweight tree node built from .md HeadingCache entries. */
+interface MdHeadingNode {
+    heading: string;
+    level: number;
+    line: number;
+    children: MdHeadingNode[];
+}
 
 export class MindMapOutlineView extends ItemView {
     private plugin: MindNodePlugin;
@@ -42,48 +50,46 @@ export class MindMapOutlineView extends ItemView {
         this.treeEl = null;
     }
 
-    /** Get the currently active MindMapView (if any). */
-    private getActiveMapView(): MindMapView | null {
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MINDMAP);
-        const active = this.app.workspace.activeLeaf;
-        if (active && active.view instanceof MindMapView) return active.view;
-        // Fallback: return the first open mind map view
-        for (const l of leaves) {
-            if (l.view instanceof MindMapView) return l.view;
-        }
-        return null;
-    }
-
-    /** Rebuild the outline tree from the active mind map. */
+    // ── public entry point ───────────────────────────────────────
+    /** Rebuild the outline tree from the currently active leaf. */
     refresh() {
         if (!this.treeEl) return;
         this.treeEl.empty();
 
-        const view = this.getActiveMapView();
-        if (!view) {
-            const empty = this.treeEl.createEl("div", {
-                text: t("outline.empty"),
-            });
-            empty.addClass("mz-outline-empty");
+        const active = this.app.workspace.activeLeaf;
+        if (!active) {
+            this.showEmpty();
             return;
         }
 
+        // ── .mindzj mind map ─────────────────────────────────────
+        if (active.view instanceof MindMapView) {
+            this.refreshMindMap(active.view);
+            return;
+        }
+
+        // ── .md markdown ─────────────────────────────────────────
+        if (active.view instanceof MarkdownView) {
+            this.refreshMarkdown(active.view);
+            return;
+        }
+
+        this.showEmpty();
+    }
+
+    // ── mind map outline ─────────────────────────────────────────
+    private refreshMindMap(view: MindMapView) {
         const roots = view.getRoots();
         if (!roots.length) {
-            const empty = this.treeEl.createEl("div", {
-                text: t("outline.empty"),
-            });
-            empty.addClass("mz-outline-empty");
+            this.showEmpty();
             return;
         }
-
         for (const root of roots) {
-            this.buildNode(this.treeEl, root, 0, view);
+            this.buildMindMapNode(this.treeEl!, root, 0, view);
         }
     }
 
-    /** Recursively build a tree node element. */
-    private buildNode(
+    private buildMindMapNode(
         parent: HTMLElement,
         nd: MindNodeData,
         depth: number,
@@ -127,7 +133,7 @@ export class MindMapOutlineView extends ItemView {
             side.addClass("mz-outline-side");
         }
 
-        // Click to select and focus node in the mind map
+        // Click → select and focus node in the mind map
         row.addEventListener("click", (e) => {
             e.stopPropagation();
             view.selectAndFocusNode(nd.id);
@@ -138,14 +144,13 @@ export class MindMapOutlineView extends ItemView {
             const childCt = item.createEl("div");
             childCt.addClass("mz-outline-children");
 
-            // Right children first, then left children
             const rightCh = nd.children.filter((c) => c.side !== "left");
             const leftCh = nd.children.filter((c) => c.side === "left");
             for (const c of rightCh)
-                this.buildNode(childCt, c, depth + 1, view);
-            for (const c of leftCh) this.buildNode(childCt, c, depth + 1, view);
+                this.buildMindMapNode(childCt, c, depth + 1, view);
+            for (const c of leftCh)
+                this.buildMindMapNode(childCt, c, depth + 1, view);
 
-            // Toggle collapse
             let collapsed = false;
             toggle.addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -154,5 +159,126 @@ export class MindMapOutlineView extends ItemView {
                 childCt.toggleClass("mz-outline-collapsed", collapsed);
             });
         }
+    }
+
+    // ── markdown outline ─────────────────────────────────────────
+    private refreshMarkdown(mdView: MarkdownView) {
+        const file = mdView.file;
+        if (!file) {
+            this.showEmpty();
+            return;
+        }
+        const cache = this.app.metadataCache.getFileCache(file);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawHeadings: any[] | undefined = (cache as any)?.headings;
+        if (!rawHeadings || !rawHeadings.length) {
+            this.showEmpty();
+            return;
+        }
+        const tree = this.buildMdTree(rawHeadings);
+        for (const node of tree) {
+            this.renderMdNode(this.treeEl!, node, 0, mdView);
+        }
+    }
+
+    /** Convert a flat HeadingCache[] list into a nested tree. */
+    private buildMdTree(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        headings: any[],
+    ): MdHeadingNode[] {
+        const roots: MdHeadingNode[] = [];
+        const stack: MdHeadingNode[] = [];
+        for (const h of headings) {
+            const node: MdHeadingNode = {
+                heading: h.heading,
+                level: h.level,
+                line: h.position?.start?.line ?? 0,
+                children: [],
+            };
+            while (stack.length && stack[stack.length - 1].level >= h.level)
+                stack.pop();
+            if (stack.length) stack[stack.length - 1].children.push(node);
+            else roots.push(node);
+            stack.push(node);
+        }
+        return roots;
+    }
+
+    /** Recursively render a markdown heading node. */
+    private renderMdNode(
+        parent: HTMLElement,
+        node: MdHeadingNode,
+        depth: number,
+        mdView: MarkdownView,
+    ) {
+        const item = parent.createEl("div");
+        item.addClass("mz-outline-item");
+
+        const row = item.createEl("div");
+        row.addClass("mz-outline-row");
+        row.style.paddingLeft = depth * 16 + 8 + "px";
+
+        const hasChildren = node.children.length > 0;
+
+        // Collapse toggle
+        const toggle = row.createEl("span");
+        toggle.addClass("mz-outline-toggle");
+        if (hasChildren) {
+            toggle.innerText = "▼";
+            toggle.addClass("mz-outline-toggle-active");
+        } else {
+            toggle.innerText = " ";
+        }
+
+        // Level badge
+        const badge = row.createEl("span", { text: "H" + node.level });
+        badge.addClass("mz-outline-badge");
+        badge.addClass("mz-outline-h" + node.level);
+
+        // Text
+        const text = row.createEl("span", { text: node.heading });
+        text.addClass("mz-outline-text");
+        if (node.level === 1) text.addClass("mz-outline-text-root");
+
+        // Click → scroll to heading in the editor
+        const targetLine = node.line;
+        row.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const editor = mdView.editor;
+            if (editor) {
+                editor.setCursor(targetLine, 0);
+                editor.scrollIntoView(
+                    {
+                        from: { line: targetLine, ch: 0 },
+                        to: { line: targetLine, ch: 0 },
+                    },
+                    true,
+                );
+            }
+        });
+
+        // Children
+        if (hasChildren) {
+            const childCt = item.createEl("div");
+            childCt.addClass("mz-outline-children");
+
+            for (const c of node.children)
+                this.renderMdNode(childCt, c, depth + 1, mdView);
+
+            let collapsed = false;
+            toggle.addEventListener("click", (e) => {
+                e.stopPropagation();
+                collapsed = !collapsed;
+                toggle.innerText = collapsed ? "▶" : "▼";
+                childCt.toggleClass("mz-outline-collapsed", collapsed);
+            });
+        }
+    }
+
+    // ── helpers ───────────────────────────────────────────────────
+    private showEmpty() {
+        if (!this.treeEl) return;
+        const el = this.treeEl.createEl("div", { text: t("outline.empty") });
+        el.addClass("mz-outline-empty");
     }
 }
