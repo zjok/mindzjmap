@@ -136,6 +136,18 @@ export default class MindNodePlugin extends Plugin {
                 }
             }),
         );
+        // Also refresh when metadata is first resolved (covers switching
+        // to a .md file whose cache wasn't ready during active-leaf-change).
+        this.registerEvent(
+            this.app.metadataCache.on("resolve", (file) => {
+                if (
+                    file.extension === "md" &&
+                    file.path === this.app.workspace.getActiveFile()?.path
+                ) {
+                    this.refreshOutline();
+                }
+            }),
+        );
     }
 
     onunload(): void {

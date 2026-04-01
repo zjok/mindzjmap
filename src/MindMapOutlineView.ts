@@ -240,21 +240,24 @@ export class MindMapOutlineView extends ItemView {
         text.addClass("mz-outline-text");
         if (node.level === 1) text.addClass("mz-outline-text-root");
 
-        // Click → scroll to heading in the editor
+        // Click → activate the editor leaf and scroll to heading
+        // Works in both source (editing) and preview (reading) modes.
         const targetLine = node.line;
         row.addEventListener("click", (e) => {
             e.stopPropagation();
-            const editor = mdView.editor;
-            if (editor) {
-                editor.setCursor(targetLine, 0);
-                editor.scrollIntoView(
-                    {
-                        from: { line: targetLine, ch: 0 },
-                        to: { line: targetLine, ch: 0 },
-                    },
-                    true,
-                );
+            // Find the leaf that holds this markdown view and activate it
+            for (const l of this.app.workspace.getLeavesOfType("markdown")) {
+                if (l.view === mdView) {
+                    this.app.workspace.setActiveLeaf(l, { focus: true });
+                    break;
+                }
             }
+            // Scroll after the leaf activation settles
+            setTimeout(() => {
+                // setEphemeralState scrolls identically in both
+                // reading (preview) and editing (source) modes.
+                mdView.setEphemeralState({ line: targetLine });
+            }, 0);
         });
 
         // Children
