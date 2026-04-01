@@ -245,19 +245,22 @@ export class MindMapOutlineView extends ItemView {
         const targetLine = node.line;
         row.addEventListener("click", (e) => {
             e.stopPropagation();
-            // Find the leaf that holds this markdown view and activate it
             for (const l of this.app.workspace.getLeavesOfType("markdown")) {
                 if (l.view === mdView) {
-                    this.app.workspace.setActiveLeaf(l, { focus: true });
+                    if (this.app.workspace.activeLeaf !== l) {
+                        this.app.workspace.setActiveLeaf(l, {
+                            focus: true,
+                        });
+                    }
                     break;
                 }
             }
-            // Scroll after the leaf activation settles
-            setTimeout(() => {
-                // setEphemeralState scrolls identically in both
-                // reading (preview) and editing (source) modes.
+            // First pass: scroll to heading
+            mdView.setEphemeralState({ line: targetLine });
+            // Second pass after layout settles: correct any drift
+            requestAnimationFrame(() => {
                 mdView.setEphemeralState({ line: targetLine });
-            }, 0);
+            });
         });
 
         // Children
