@@ -3249,6 +3249,7 @@ var MindMapView = class extends import_obsidian.TextFileView {
     this.mdMode = false;
     this.mdBtn = null;
     this.clipboard = null;
+    this.clipboardText = null;
     this.activeMenu = null;
     this.searchBar = null;
     this.searchResults = [];
@@ -3308,10 +3309,10 @@ var MindMapView = class extends import_obsidian.TextFileView {
         this.copyNode(true);
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && this.clipboard) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && this.selId) {
         e.preventDefault();
         e.stopPropagation();
-        this.pasteNode(e.shiftKey);
+        void this.handlePaste(e.shiftKey);
         return;
       }
       if (this.matchKey(e, this.kb.undo)) {
@@ -5204,6 +5205,7 @@ var MindMapView = class extends import_obsidian.TextFileView {
     if (!nd)
       return;
     this.clipboard = { data: JSON.stringify(nd), isRoot: !!nd.isRoot, cut };
+    this.clipboardText = nd.text;
     navigator.clipboard.writeText(nd.text).catch(() => {
     });
     if (cut) {
@@ -5259,6 +5261,35 @@ var MindMapView = class extends import_obsidian.TextFileView {
     this.sel1(clone.id);
     this.render();
     this.doSave();
+  }
+  /**
+   * Async paste handler: reads the system clipboard to decide whether
+   * to paste a previously copied node or to replace the selected
+   * node's text with externally copied text.
+   */
+  async handlePaste(strip) {
+    let sysText = null;
+    try {
+      sysText = await navigator.clipboard.readText();
+    } catch (e) {
+    }
+    if (sysText != null && sysText !== "" && sysText !== this.clipboardText) {
+      if (!this.selId)
+        return;
+      const nd = this.fAll(this.selId);
+      if (!nd)
+        return;
+      this.saveS();
+      nd.text = sysText;
+      nd.width = this.calcW(sysText, !!nd.isRoot);
+      nd.height = this.calcH(sysText, !!nd.isRoot);
+      this.render();
+      this.doSave();
+      return;
+    }
+    if (this.clipboard) {
+      this.pasteNode(strip);
+    }
   }
   cancelDrag() {
     var _a, _b;

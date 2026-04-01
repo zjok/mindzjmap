@@ -81,6 +81,7 @@ export class MindMapView extends TextFileView {
     private mdBtn: HTMLButtonElement | null = null;
     private clipboard: { data: string; isRoot: boolean; cut: boolean } | null =
         null;
+    private clipboardText: string | null = null;
     private activeMenu: Menu | null = null;
     private searchBar: HTMLDivElement | null = null;
     private searchResults: MindNodeData[] = [];
@@ -1765,11 +1766,11 @@ export class MindMapView extends TextFileView {
         if (
             (e.ctrlKey || e.metaKey) &&
             e.key.toLowerCase() === "v" &&
-            this.clipboard
+            this.selId
         ) {
             e.preventDefault();
             e.stopPropagation();
-            this.pasteNode(e.shiftKey);
+            void this.handlePaste(e.shiftKey);
             return;
         }
         if (this.matchKey(e, this.kb.undo)) {
@@ -2022,6 +2023,7 @@ export class MindMapView extends TextFileView {
         if (!nd) return;
         this.clipboard = { data: JSON.stringify(nd), isRoot: !!nd.isRoot, cut };
         // Also write to system clipboard so paste works in other text fields
+        this.clipboardText = nd.text;
         navigator.clipboard.writeText(nd.text).catch(() => {
             /* ignore */
         });
@@ -2070,6 +2072,42 @@ export class MindMapView extends TextFileView {
         this.sel1(clone.id);
         this.render();
         this.doSave();
+    }
+    /**
+     * Async paste handler: reads the system clipboard to decide whether
+     * to paste a previously copied node or to replace the selected
+     * node's text with externally copied text.
+     */
+    private async handlePaste(strip: boolean) {
+        let sysText: string | null = null;
+        try {
+            sysText = await navigator.clipboard.readText();
+        } catch {
+            /* clipboard read may fail – fall through to node paste */
+        }
+        // If the system clipboard text differs from what we wrote during
+        // copyNode, the user copied new text externally → replace the
+        // selected node's text.
+        if (
+            sysText != null &&
+            sysText !== "" &&
+            sysText !== this.clipboardText
+        ) {
+            if (!this.selId) return;
+            const nd = this.fAll(this.selId);
+            if (!nd) return;
+            this.saveS();
+            nd.text = sysText;
+            nd.width = this.calcW(sysText, !!nd.isRoot);
+            nd.height = this.calcH(sysText, !!nd.isRoot);
+            this.render();
+            this.doSave();
+            return;
+        }
+        // Otherwise use the internal clipboard to paste the node.
+        if (this.clipboard) {
+            this.pasteNode(strip);
+        }
     }
     private cancelDrag() {
         if (!this.ds) return;
