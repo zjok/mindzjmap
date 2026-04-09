@@ -79,13 +79,13 @@ export class MindMapView extends TextFileView {
     private popClose: (() => void) | null = null;
     private mdMode = false;
     private mdBtn: HTMLButtonElement | null = null;
-    private clipboard: {
+    private static clipboard: {
         data: string;
         isRoot: boolean;
         cut: boolean;
         multi?: boolean;
     } | null = null;
-    private clipboardText: string | null = null;
+    private static clipboardText: string | null = null;
     private activeMenu: Menu | null = null;
     private searchBar: HTMLDivElement | null = null;
     private searchResults: MindNodeData[] = [];
@@ -1727,16 +1727,27 @@ export class MindMapView extends TextFileView {
             if (e.key === "Escape") this.cancelDrag();
             return;
         }
-        // Edit mode
+        // Edit mode – let the textarea handle most keys natively,
+        // but explicitly handle Ctrl+A / Ctrl+V / Ctrl+C / Ctrl+X
+        // because native clipboard may not fire inside SVG foreignObject.
         if (this.editId) {
-            if (
-                (e.ctrlKey || e.metaKey) &&
-                e.key.toLowerCase() === "a" &&
-                this.liveTA
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.liveTA.select();
+            if ((e.ctrlKey || e.metaKey) && this.liveTA) {
+                const k = e.key.toLowerCase();
+                if (k === "a") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.liveTA.select();
+                } else if (k === "v") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void this.pasteIntoTA();
+                } else if (k === "c" || k === "x") {
+                    // Let native copy/cut work on the textarea selection,
+                    // but clear the node clipboard so the next paste knows
+                    // the clipboard holds text, not a copied node.
+                    MindMapView.clipboard = null;
+                    MindMapView.clipboardText = null;
+                }
             }
             return;
         }
@@ -1767,14 +1778,16 @@ export class MindMapView extends TextFileView {
             this.copyNode(true);
             return;
         }
-        if (
-            (e.ctrlKey || e.metaKey) &&
-            e.key.toLowerCase() === "v" &&
-            this.selId
-        ) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
             e.preventDefault();
             e.stopPropagation();
-            void this.handlePaste(e.shiftKey);
+            if (this.selId) {
+                // Node selected → overwrite its text content
+                void this.handlePaste();
+            } else if (MindMapView.clipboard) {
+                // No node selected → structural paste (create nodes)
+                this.pasteNode(e.shiftKey);
+            }
             return;
         }
         if (this.matchKey(e, this.kb.undo)) {
@@ -2041,14 +2054,14 @@ export class MindMapView extends TextFileView {
                 return true;
             });
             if (!nodes.length) return;
-            this.clipboard = {
+            MindMapView.clipboard = {
                 data: JSON.stringify(nodes),
                 isRoot: nodes.some((n) => !!n.isRoot),
                 cut,
                 multi: true,
             };
             const allText = nodes.map((n) => n.text).join("\n");
-            this.clipboardText = allText;
+            MindMapView.clipboardText = allText;
             navigator.clipboard.writeText(allText).catch(() => {});
             if (cut) {
                 this.saveS();
@@ -2067,9 +2080,9 @@ export class MindMapView extends TextFileView {
         // ── Single-node copy (existing logic) ──────────────────────
         const nd = this.fAll(this.selId);
         if (!nd) return;
-        this.clipboard = { data: JSON.stringify(nd), isRoot: !!nd.isRoot, cut };
+        MindMapView.clipboard = { data: JSON.stringify(nd), isRoot: !!nd.isRoot, cut };
         // Also write to system clipboard so paste works in other text fields
-        this.clipboardText = nd.text;
+        MindMapView.clipboardText = nd.text;
         navigator.clipboard.writeText(nd.text).catch(() => {
             /* ignore */
         });
@@ -2084,19 +2097,19 @@ export class MindMapView extends TextFileView {
         }
     }
     private pasteNode(strip: boolean) {
-        if (!this.clipboard) return;
+        if (!MindMapView.clipboard) return;
 
         // ── Multi-node paste ───────────────────────────────────────
-        if (this.clipboard.multi) {
-            const clones: MindNodeData[] = JSON.parse(this.clipboard.data);
+        if (MindMapView.clipboard.multi) {
+            const clones: MindNodeData[] = JSON.parse(MindMapView.clipboard.data);
             const reId = (n: MindNodeData) => {
                 n.id = crypto.randomUUID();
                 for (const c of n.children) reId(c);
             };
-            if (!this.clipboard.cut) {
+            if (!MindMapView.clipboard.cut) {
                 for (const n of clones) reId(n);
             } else {
-                this.clipboard = null;
+                MindMapView.clipboard = null;
             }
             if (strip) {
                 const s = (n: MindNodeData) => {
@@ -2131,14 +2144,14 @@ export class MindMapView extends TextFileView {
         }
 
         // ── Single-node paste (existing logic) ─────────────────────
-        const clone: MindNodeData = JSON.parse(this.clipboard.data);
-        if (!this.clipboard.cut) {
+        const clone: MindNodeData = JSON.parse(MindMapView.clipboard.data);
+        if (!MindMapView.clipboard.cut) {
             const reId = (n: MindNodeData) => {
                 n.id = crypto.randomUUID();
                 for (const c of n.children) reId(c);
             };
             reId(clone);
-        } else this.clipboard = null;
+        } else MindMapView.clipboard = null;
         if (strip) {
             const s = (n: MindNodeData) => {
                 n.styleOverride = undefined;
@@ -2166,40 +2179,68 @@ export class MindMapView extends TextFileView {
         this.doSave();
     }
     /**
-     * Async paste handler: reads the system clipboard to decide whether
-     * to paste a previously copied node or to replace the selected
-     * node's text with externally copied text.
+     * Paste clipboard text into the live edit textarea at cursor position.
+     * Replaces selected text if any, otherwise inserts at cursor.
      */
-    private async handlePaste(strip: boolean) {
+    private async pasteIntoTA() {
+        if (!this.liveTA) return;
+        let text: string | null = null;
+        try {
+            text = await navigator.clipboard.readText();
+        } catch {
+            /* ignore */
+        }
+        if (!text) text = MindMapView.clipboardText;
+        if (!text) return;
+
+        const ta = this.liveTA;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        ta.setRangeText(text, start, end, "end");
+        ta.dispatchEvent(new Event("input"));
+    }
+    /**
+     * Async paste handler for Ctrl+V on a selected (non-editing) node.
+     * - If the last copy was a node copy (clipboard matches) → structural paste
+     * - Otherwise (text from edit-mode or external) → overwrite node text
+     */
+    private async handlePaste() {
+        if (!this.selId) return;
+
         let sysText: string | null = null;
         try {
             sysText = await navigator.clipboard.readText();
         } catch {
-            /* clipboard read may fail – fall through to node paste */
+            /* clipboard read may fail */
         }
-        // If the system clipboard text differs from what we wrote during
-        // copyNode, the user copied new text externally → replace the
-        // selected node's text.
+
+        // If system clipboard text matches what copyNode wrote,
+        // the last copy was a node copy → structural paste (add as child).
         if (
-            sysText != null &&
-            sysText !== "" &&
-            sysText !== this.clipboardText
+            MindMapView.clipboard &&
+            MindMapView.clipboardText != null &&
+            sysText === MindMapView.clipboardText
         ) {
-            if (!this.selId) return;
-            const nd = this.fAll(this.selId);
-            if (!nd) return;
-            this.saveS();
-            nd.text = sysText;
-            nd.width = this.calcW(sysText, !!nd.isRoot);
-            nd.height = this.calcH(sysText, !!nd.isRoot);
-            this.render();
-            this.doSave();
+            this.pasteNode(false);
             return;
         }
-        // Otherwise use the internal clipboard to paste the node.
-        if (this.clipboard) {
-            this.pasteNode(strip);
-        }
+
+        // Otherwise the clipboard holds text (from edit-mode copy or
+        // external app) → overwrite the selected node's text.
+        const nd = this.fAll(this.selId);
+        if (!nd) return;
+        const text =
+            sysText != null && sysText !== ""
+                ? sysText
+                : MindMapView.clipboardText;
+        if (!text) return;
+
+        this.saveS();
+        nd.text = text;
+        nd.width = this.calcW(text, !!nd.isRoot);
+        nd.height = this.calcH(text, !!nd.isRoot);
+        this.render();
+        this.doSave();
     }
     private cancelDrag() {
         if (!this.ds) return;
@@ -3016,6 +3057,15 @@ export class MindMapView extends TextFileView {
                     );
                 }),
         );
+        if (MindMapView.clipboard)
+            menu.addItem((i) =>
+                i
+                    .setTitle(t("ctx.paste"))
+                    .onClick(() => {
+                        this.clrSel();
+                        this.pasteNode(false);
+                    }),
+            );
         menu.addSeparator();
         menu.addItem((i) =>
             i
@@ -3091,7 +3141,7 @@ export class MindMapView extends TextFileView {
                         this.copyNode(true);
                     }),
             );
-            if (this.clipboard)
+            if (MindMapView.clipboard)
                 menu.addItem((i) =>
                     i
                         .setTitle(t("ctx.paste"))
