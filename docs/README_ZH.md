@@ -50,22 +50,22 @@
   </a>
 </p>
 
-<p align="center">如果 MindZJ 对你有帮助，欢迎支持本项目</p>
+<p align="center">如果 MindZJMap 对你有帮助，欢迎支持本项目</p>
 
 ---
 
 ## 预览
 
 <p align="center">
-  <img src="../docs/assets/mindzj_0.gif" alt="MindZJ 主界面" width="800" />
+  <img src="../docs/assets/mindzj_0.gif" alt="MindZJMap 主界面" width="800" />
   <br/>
   <em>创建节点、编辑文本、拖放操作、彩虹连线效果展示</em>
 </p>
 
 <p align="center">
-  <img src="../docs/assets/mindzj_2.jpg" alt="MindZJ 演示" width="800" />
+  <img src="../docs/assets/mindzj_2.jpg" alt="MindZJMap 演示" width="800" />
   <br/>
-  <em>MindZJ 主界面 — 在 Obsidian 中直接创建、编辑和美化思维导图</em>
+  <em>MindZJMap 主界面 — 在 Obsidian 中直接创建、编辑和美化思维导图</em>
 </p>
 
 <p align="center">
@@ -322,7 +322,7 @@ mindzj/
 
 ## 支持项目
 
-如果 MindZJ 对你有帮助，欢迎支持本项目：
+如果 MindZJMap 对你有帮助，欢迎支持本项目：
 
 <p align="center">
   <a href="https://www.buymeacoffee.com/superjohn">

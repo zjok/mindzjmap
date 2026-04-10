@@ -51,22 +51,22 @@
   </a>
 </p>
 
-<p align="center">Si MindZJ te resulta útil, considera apoyar el proyecto</p>
+<p align="center">Si MindZJMap te resulta útil, considera apoyar el proyecto</p>
 
 ---
 
 ## Vista previa
 
 <p align="center">
-  <img src="../docs/assets/mindzj_0.gif" alt="Interfaz principal de MindZJ" width="800" />
+  <img src="../docs/assets/mindzj_0.gif" alt="Interfaz principal de MindZJMap" width="800" />
   <br/>
   <em>Creación de nodos, edición de texto, arrastrar y soltar, y conexiones arcoíris en acción</em>
 </p>
 
 <p align="center">
-  <img src="../docs/assets/mindzj_2.jpg" alt="Demostración de MindZJ" width="800" />
+  <img src="../docs/assets/mindzj_2.jpg" alt="Demostración de MindZJMap" width="800" />
   <br/>
-  <em>Interfaz principal de MindZJ — crea, edita y estiliza mapas mentales directamente en Obsidian</em>
+  <em>Interfaz principal de MindZJMap — crea, edita y estiliza mapas mentales directamente en Obsidian</em>
 </p>
 
 <p align="center">
@@ -323,7 +323,7 @@ mindzj/
 
 ## Apoyo al proyecto
 
-Si MindZJ te resulta útil, considera apoyar el proyecto:
+Si MindZJMap te resulta útil, considera apoyar el proyecto:
 
 <p align="center">
   <a href="https://www.buymeacoffee.com/superjohn">

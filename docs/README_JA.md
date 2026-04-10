@@ -51,7 +51,7 @@
   </a>
 </p>
 
-<p align="center">MindZJ が役に立ったら、プロジェクトの支援をご検討ください</p>
+<p align="center">MindZJMap が役に立ったら、プロジェクトの支援をご検討ください</p>
 
 ---
 
@@ -320,7 +320,7 @@ mindzj/
 
 ## サポート
 
-MindZJ が役に立ったら、プロジェクトの支援をご検討ください：
+MindZJMap が役に立ったら、プロジェクトの支援をご検討ください：
 
 <p align="center">
   <a href="https://www.buymeacoffee.com/username">

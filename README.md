@@ -50,23 +50,23 @@
   </a>
 </p>
 
-<p align="center">If you find MindZJ useful, consider supporting the project</p>
+<p align="center">If you find MindZJMap useful, consider supporting the project</p>
 
 ---
 
 ## Preview
 
 <p align="center">
-  <img src="docs/assets/mindzj_0.gif" alt="MindZJ Main Interface" width="800" />
+  <img src="docs/assets/mindzj_0.gif" alt="MindZJMap Main Interface" width="800" />
   <br/>
   <em>Creating nodes, editing text, drag & drop, and rainbow connections in action</em>
 
 </p>
 
 <p align="center">
-  <img src="docs/assets/mindzj_2.jpg" alt="MindZJ Demo" width="800" />
+  <img src="docs/assets/mindzj_2.jpg" alt="MindZJMap Demo" width="800" />
   <br/>
-  <em>MindZJ main interface — create, edit, and style mind maps directly inside Obsidian</em>
+  <em>MindZJMap main interface — create, edit, and style mind maps directly inside Obsidian</em>
 </p>
 
 <p align="center">
@@ -323,7 +323,7 @@ mindzj/
 
 ## Support
 
-If you find MindZJ useful, consider supporting the project:
+If you find MindZJMap useful, consider supporting the project:
 
 <p align="center">
   <a href="https://www.buymeacoffee.com/superjohn">

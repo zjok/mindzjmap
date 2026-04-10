@@ -51,7 +51,7 @@
   </a>
 </p>
 
-<p align="center">Si vous trouvez MindZJ utile, pensez à soutenir le projet</p>
+<p align="center">Si vous trouvez MindZJMap utile, pensez à soutenir le projet</p>
 
 ---
 
@@ -323,7 +323,7 @@ mindzj/
 
 ## Soutenir le projet
 
-Si vous trouvez MindZJ utile, pensez à soutenir le projet :
+Si vous trouvez MindZJMap utile, pensez à soutenir le projet :
 
 <p align="center">
   <a href="https://www.buymeacoffee.com/superjohn">
