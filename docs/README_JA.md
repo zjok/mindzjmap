@@ -2,7 +2,7 @@
   <span style="font-size:58px;">🗺️</span>
 </h1>
 
-<h1 align="center">MindZJ — Obsidian マインドマッププラグイン</h1>
+<h1 align="center">MindZJMap — MindZJ & Obsidian マインドマッププラグイン</h1>
 
 <p align="center">
   <em><a href="https://obsidian.md">Obsidian</a> 向けに開発された、高機能でフルカスタマイズ可能なマインドマッププラグイン。</em>

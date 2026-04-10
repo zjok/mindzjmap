@@ -1,6 +1,6 @@
 <h1 align="center">
   🗺️<br><br>
-  MindZJ — Mind Map Plugin for Obsidian
+  MindZJMap — Mind Map Plugin for MindZJ & Obsidian
 </h1>
 
 <p align="center">

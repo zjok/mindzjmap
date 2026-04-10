@@ -2,7 +2,7 @@
   <span style="font-size:58px;">🗺️</span>
 </h1>
 
-<h1 align="center">MindZJ — Mindmap-Plugin für Obsidian</h1>
+<h1 align="center">MindZJMap — Mindmap-Plugin für MindZJ & Obsidian</h1>
 
 <p align="center">
   <em>Ein funktionsreiches, vollständig anpassbares Mindmap-Plugin, nativ entwickelt für <a href="https://obsidian.md">Obsidian</a>.</em>

@@ -2,7 +2,7 @@
   <span style="font-size:58px;">🗺️</span>
 </h1>
 
-<h1 align="center">MindZJ — Plugin de carte mentale pour Obsidian</h1>
+<h1 align="center">MindZJMap — Plugin de carte mentale pour MindZJ & Obsidian</h1>
 
 <p align="center">
   <em>Un plugin de carte mentale riche en fonctionnalités et entièrement personnalisable, conçu nativement pour <a href="https://obsidian.md">Obsidian</a>.</em>
